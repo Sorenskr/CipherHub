@@ -131,5 +131,29 @@ if m2:
     check("rebuilt has data", 'window.__DATA__=' in rebuilt)
     check("rebuilt no creds", "adminPassHash" not in rebuilt)
 
+# ---- 关键：内联的 JS 块不能被提前截断（</script 必须已转义）----
+node = os.path.join(os.path.expanduser("~"), ".workbuddy", "binaries", "node", "versions", "22.22.2-6", "node.exe")
+if not os.path.exists(node):
+    node = "node"
+
+blocks = re.findall(r"<script>\n([\s\S]*?)\n</script>", ah)
+check("admin script blocks balanced", ah.count("</script>") == len(re.findall(r"<script[ >]", ah)) - 5,
+      "closing=%d opening=%d" % (ah.count("</script>"), len(re.findall(r"<script[ >]", ah))))
+
+target = None
+for b in blocks:
+    if "CipherHub 离线后台" in b:
+        target = b
+        break
+check("admin js block extracted", bool(target))
+if target:
+    tmp = os.path.join(tempfile.gettempdir(), "_admin_block.js")
+    io.open(tmp, "w", encoding="utf-8").write(target)
+    r = subprocess.run([node, "--check", tmp], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    check("shipped admin JS syntax valid", r.returncode == 0, (r.stderr or "").strip()[:120])
+    check("admin JS ends with bootstrap call", target.rstrip().endswith("})();") or "initGate();" in target[-200:])
+    # 导出用的模板字符串必须已转义，否则会截断 HTML
+    check("export strings escaped", "<\\/script>" in target)
+
 print("\nRESULT:", "ALL PASS" if ok else "HAS FAILURE")
 sys.exit(0 if ok else 1)

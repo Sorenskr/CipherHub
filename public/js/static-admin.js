@@ -82,6 +82,7 @@
   /* ---------------- 访问口令 ---------------- */
   function initGate() {
     var gate = $('#gate');
+    if (!PASS) { gate.style.display = 'none'; enterApp(); return; }
     if (localStorage.getItem(OK_KEY) === '1') { gate.style.display = 'none'; enterApp(); return; }
     gate.style.display = 'grid';
     $('#gateForm').addEventListener('submit', function (e) {
@@ -450,12 +451,13 @@
     db.settings = stripCreds(db.settings);
     db.feedbacks = [];
 
+    // 注意：这里的 </script> 必须写成 <\/script>，否则本文件被内联进 HTML 时会提前截断脚本块
     var html = TPL.index
       .replace('<link rel="stylesheet" href="/css/style.css">', '<style>\n' + TPL.css + '\n</style>')
-      .replace('<script src="/js/app.js"></script>',
-        '<script>window.__DATA__=' + safeJson(db) + ';</script>\n' +
-        '<script>\n' + TPL.shim + '\n</script>\n' +
-        '<script>\n' + TPL.app + '\n</script>')
+      .replace('<script src="/js/app.js"><\/script>',
+        '<script>window.__DATA__=' + safeJson(db) + ';<\/script>\n' +
+        '<script>\n' + TPL.shim + '\n<\/script>\n' +
+        '<script>\n' + TPL.app + '\n<\/script>')
       .replace(/"\/assets\//g, '"assets/')
       .replace(/'\/assets\//g, "'assets/");
 

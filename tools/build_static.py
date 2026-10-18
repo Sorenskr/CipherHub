@@ -38,6 +38,11 @@ def write(p, s):
         f.write(s)
 
 
+def js_inline(s):
+    """内联 JS 前转义 </script，避免提前截断 HTML 脚本块（JS 中 \\/ 等价于 /）"""
+    return s.replace("</script", "<\\/script")
+
+
 def main():
     admin_pass = "admin123"
     args = sys.argv[1:]
@@ -45,6 +50,9 @@ def main():
         i = args.index("--admin-pass")
         if i + 1 < len(args):
             admin_pass = args[i + 1]
+    # --no-pass：直接进后台，不要口令
+    if "--no-pass" in args:
+        admin_pass = ""
 
     tpl_index = read(os.path.join(PUB, "index.html"))
     css = read(os.path.join(PUB, "css", "style.css"))
@@ -69,8 +77,8 @@ def main():
     ).replace(
         '<script src="/js/app.js"></script>',
         "<script>window.__DATA__=" + data_js + ";</script>\n"
-        "<script>\n" + shim + "\n</script>\n"
-        "<script>\n" + app + "\n</script>",
+        "<script>\n" + js_inline(shim) + "\n</script>\n"
+        "<script>\n" + js_inline(app) + "\n</script>",
     )
     html = html.replace('"/assets/', '"assets/').replace("'/assets/", "'assets/")
     html = html.replace('<div id="toast"></div>', NOTICE + '\n<div id="toast"></div>')
@@ -94,12 +102,12 @@ def main():
         "<script>window.__ADMIN_PASS__=" + json.dumps(admin_pass, ensure_ascii=False) + ";</script>\n"
         "<script>window.__DATA__=" + admin_data + ";</script>\n"
         "<script>window.__TPL__=" + tpl_payload + ";</script>\n"
-        "<script>\n" + admin_js + "\n</script>",
+        "<script>\n" + js_inline(admin_js) + "\n</script>",
     )
     ahtml = ahtml.replace('"/assets/', '"assets/').replace("'/assets/", "'assets/")
     write(os.path.join(BASE, "admin.html"), ahtml)
     print("generated: admin.html  %d bytes  (口令: %s)" % (
-        os.path.getsize(os.path.join(BASE, "admin.html")), admin_pass))
+        os.path.getsize(os.path.join(BASE, "admin.html")), admin_pass or "无，直接打开"))
 
     # ---------- assets ----------
     src = os.path.join(PUB, "assets")
