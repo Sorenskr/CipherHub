@@ -83,6 +83,28 @@ feedbacks : [{ id, name, contact, message, status, createdAt }]
 settings  : { siteName, subtitle, logos[], feedback{title,desc,enableForm}, contacts[] }
 ```
 
+## 网页版离线后台（GitHub Pages 专用）
+
+根目录 `admin.html` 是一个**纯静态后台**，无需服务器，直接在 Pages 上打开：
+
+```
+https://<你的用户名>.github.io/CipherHub/admin.html
+```
+
+口令默认 `admin123`（生成时用 `python tools/build_static.py --admin-pass 你的口令` 修改）。
+
+**发布流程：**
+
+1. 打开 `admin.html` → 在「成员 / 暗号记录 / 批量导入 / 平台 / 站点设置」里改数据（改动自动存本机草稿）
+2. 到「导出」页 → **下载 index.html** 和 **下载 db.json**
+3. 覆盖仓库根目录的 `index.html`，以及 `data/db.json`
+4. ```bash
+   git add -A && git commit -m "update data" && git push
+   ```
+5. Pages 1~2 分钟内重建，**所有人打开就是最新版**
+
+> 后台页面不会在前台露出任何入口，且带 `noindex`。但它是纯前端页面，口令只是挡住随手点进来的人，**不是真正的安全保护**——前台 `index.html` 本身也内含全部数据，敏感数据请用私有仓库。
+
 ## 上传到 GitHub & 用 GitHub Pages 打开
 
 仓库根目录已经有一份**静态版 `index.html`**（自动生成，CSS / JS / 数据全部内嵌，可直接双击打开，也能被 GitHub Pages 直接托管）。
@@ -112,13 +134,13 @@ python tools/build_static.py
 
 ### 两种运行方式的区别
 
-| | 静态版 `index.html` | Node 版 `server.js` |
-|---|---|---|
-| 托管 | GitHub Pages / 任意静态空间 / 直接双击打开 | 需要 Node 服务器 |
-| 查询 | ✅ 完整可用（数据在浏览器里查） | ✅ |
-| 后台增删改 | ❌ | ✅ |
-| 访客留言 | 存访客本机 localStorage（你看不到） | ✅ 存到服务器，后台可见 |
-| 数据 | 快照，需重新生成 | 实时 |
+| | 静态版 `index.html` | 离线后台 `admin.html` | Node 版 `server.js` |
+|---|---|---|---|
+| 托管 | GitHub Pages / 双击打开 | GitHub Pages / 双击打开 | 需要 Node 服务器 |
+| 查询 | ✅ 完整可用（浏览器里查） | — | ✅ |
+| 增删改数据 | ❌ | ✅（改完导出文件） | ✅ 实时生效 |
+| 生效方式 | — | 导出后 push，1~2 分钟 | 立即 |
+| 访客留言 | 存访客本机（你看不到） | ❌ | ✅ 后台可见 |
 
 > **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
 

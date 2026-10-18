@@ -35,7 +35,7 @@ if m:
     check("embedded entries", len(d["entries"]) == 1446, len(d["entries"]))
     check("feedback stripped", len(d.get("feedbacks", [])) == 0)
 
-check("static notice present", "静态预览版" in html)
+check("static notice present", "静态版" in html)
 
 # ---- 用 node 直接验证垫片逻辑 ----
 node = os.path.join(os.path.expanduser("~"), ".workbuddy", "binaries", "node", "versions", "22.22.2-6", "node.exe")
@@ -81,6 +81,55 @@ check("shim search by name", "SEARCHNAME 1 周政霖" in out)
 check("shim samples masked", "SAMPLES 3" in out and "*" in out)
 check("shim suggest", "SUGGEST" in out)
 check("shim feedback local", "FEEDBACK 200" in out)
+
+# ---- admin.html（离线后台）----
+ADMIN = os.path.join(BASE, "admin.html")
+ah = io.open(ADMIN, "r", encoding="utf-8").read()
+check("admin.html exists", os.path.exists(ADMIN), "%d bytes" % os.path.getsize(ADMIN))
+check("admin has <style>", "<style>" in ah)
+# 去掉所有内联 <script> 块后，检查页面骨架是否还引用外部资源
+# （模板与导出逻辑里出现的 "/css/style.css" 只是字符串，不是真实加载）
+ah_shell = re.sub(r"<script[\s\S]*?</script>", "", ah)
+check("admin no external css", "/css/style.css" not in ah_shell)
+check("admin no external js", "<script src=" not in ah_shell)
+check("admin favicon relative", 'href="assets/logo.png"' in ah)
+check("admin has __TPL__", "window.__TPL__=" in ah)
+check("admin has __ADMIN_PASS__", "window.__ADMIN_PASS__=" in ah)
+check("admin has __DATA__", "window.__DATA__=" in ah)
+check("admin has export btn", "下载 index.html" in ah)
+check("admin noindex", 'name="robots"' in ah)
+
+# 模拟浏览器内的「下载 index.html」：用 admin.html 内置模板重建，应与生成的 index.html 一致
+m2 = re.search(r"window\.__TPL__=(\{.*?\});</script>", ah, re.S)
+check("admin TPL parseable", bool(m2))
+if m2:
+    tpl = json.loads(m2.group(1).replace("<\\/", "</"))
+    check("tpl complete", all(k in tpl and tpl[k] for k in ("index", "css", "shim", "app")))
+    m3 = re.search(r"window\.__DATA__=(\{.*?\});</script>", ah, re.S)
+    db_admin = json.loads(m3.group(1).replace("<\\/", "</"))
+    st = db_admin.get("settings", {})
+    for k in ("adminUser", "adminSalt", "adminPassHash"):
+        st.pop(k, None)
+    db_admin["feedbacks"] = []
+    payload = json.dumps(db_admin, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+    rebuilt = tpl["index"].replace(
+        '<link rel="stylesheet" href="/css/style.css">', "<style>\n" + tpl["css"] + "\n</style>", 1
+    ).replace(
+        '<script src="/js/app.js"></script>',
+        "<script>window.__DATA__=" + payload + ";</script>\n"
+        "<script>\n" + tpl["shim"] + "\n</script>\n"
+        "<script>\n" + tpl["app"] + "\n</script>", 1
+    )
+    rebuilt = rebuilt.replace('"/assets/', '"assets/').replace("'/assets/", "'assets/")
+    notice = ('<div class="tip-bar" style="margin-top:16px">当前为<b>静态版</b>：'
+              '查询功能完整可用，数据快照由后台导出生成。</div>')
+    rebuilt = rebuilt.replace('<div id="toast"></div>', notice + '\n<div id="toast"></div>', 1)
+
+    check("rebuilt == index.html", rebuilt.strip() == html.strip(),
+          "differs" if rebuilt.strip() != html.strip() else "identical")
+    check("rebuilt has data", 'window.__DATA__=' in rebuilt)
+    check("rebuilt no creds", "adminPassHash" not in rebuilt)
 
 print("\nRESULT:", "ALL PASS" if ok else "HAS FAILURE")
 sys.exit(0 if ok else 1)

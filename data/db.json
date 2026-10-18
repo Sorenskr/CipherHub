@@ -6,14 +6,14 @@
   "adminUser": "admin",
   "adminSalt": "7cdc9bc42da30c2e28570696f0a5223d",
   "adminPassHash": "730130d1942095ca0663da9a2445be059b79f2e5a6d6dd9c1facff33368613ce",
-  "updatedAt": "2026-10-18T21:40:13.338Z",
+  "updatedAt": "2026-10-18T22:17:51.038Z",
   "logos": [
    "/assets/Laya.png",
    "/assets/Laya2.png"
   ],
   "feedback": {
    "title": "问题反馈",
-   "desc": "查不到暗号、信息有误、需要新增成员？把问题丢给我们，管理员会尽快处理。",
+   "desc": "有问题就留言",
    "enableForm": true
   },
   "contacts": []
