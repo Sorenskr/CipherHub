@@ -83,19 +83,44 @@ feedbacks : [{ id, name, contact, message, status, createdAt }]
 settings  : { siteName, subtitle, logos[], feedback{title,desc,enableForm}, contacts[] }
 ```
 
-## 上传到 GitHub
+## 上传到 GitHub & 用 GitHub Pages 打开
+
+仓库根目录已经有一份**静态版 `index.html`**（自动生成，CSS / JS / 数据全部内嵌，可直接双击打开，也能被 GitHub Pages 直接托管）。
 
 ```bash
-cd 项目目录
-git init
-git add .
+cd E:\code\anhao
+git add -A
 git commit -m "feat: CipherHub 暗号查询中心"
 git branch -M main
 git remote add origin https://github.com/<你的用户名>/cipherhub.git
 git push -u origin main
 ```
 
-> `data/backups/` 已在 `.gitignore` 中忽略。如果想让线上也有初始数据，保留 `data/db.json` 一起提交；若希望仓库干净，可把 `data/db.json` 加进 `.gitignore`，部署后用 `tools/import_excel.py` 重新生成。
+然后在 GitHub 仓库页面：**Settings → Pages → Build and deployment → Source 选 `Deploy from a branch` → Branch 选 `main` / 目录选 `/(root)` → Save**。
+
+等 1~2 分钟即可访问：`https://<你的用户名>.github.io/cipherhub/`
+
+### 数据更新后重新生成静态版
+
+静态版是一份数据快照，后台改完数据后执行：
+
+```bash
+python tools/build_static.py
+```
+
+会重新生成根目录 `index.html`（管理员账号密码不会写入该文件）。
+
+### 两种运行方式的区别
+
+| | 静态版 `index.html` | Node 版 `server.js` |
+|---|---|---|
+| 托管 | GitHub Pages / 任意静态空间 / 直接双击打开 | 需要 Node 服务器 |
+| 查询 | ✅ 完整可用（数据在浏览器里查） | ✅ |
+| 后台增删改 | ❌ | ✅ |
+| 访客留言 | 存访客本机 localStorage（你看不到） | ✅ 存到服务器，后台可见 |
+| 数据 | 快照，需重新生成 | 实时 |
+
+> **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
 
 ## 部署到国内服务器
 
