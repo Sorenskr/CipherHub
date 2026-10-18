@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>管理后台 · 暗号查询中心</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%237c5cff'/><text x='50' y='68' font-size='56' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>#</text></svg>">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-body">
+
+<!-- 登录 -->
+<div id="loginPage" class="login-page" style="display:none">
+  <form class="card login-card" id="loginForm">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="logo" style="width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#ff5c8a);color:#fff;font-weight:800">#</span>
+      <b style="font-size:17px">暗号查询中心 · 后台</b>
+    </div>
+    <div class="tiny muted" style="margin-bottom:6px">登录后即可管理成员、暗号与短链</div>
+    <div class="row">
+      <label>账号</label>
+      <input class="input" id="lgUser" value="admin" autocomplete="username">
+    </div>
+    <div class="row">
+      <label>密码</label>
+      <input class="input" id="lgPass" type="password" autocomplete="current-password" placeholder="请输入密码">
+    </div>
+    <div class="err-text" id="lgErr"></div>
+    <button class="btn primary" type="submit" id="lgBtn">登 录</button>
+    <div class="hint">默认账号 <b>admin</b> / 密码 <b>admin123</b>，登录后请尽快修改</div>
+    <div class="hint"><a href="/" style="color:var(--brand-2)">← 返回查询首页</a></div>
+  </form>
+</div>
+
+<!-- 主界面 -->
+<div id="adminPage" style="display:none">
+  <header class="admin-head">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="logo">#</span><span>后台管理</span>
+      </a>
+      <div class="tabs" id="tabs">
+        <button data-tab="dash" class="on">概览</button>
+        <button data-tab="people">成员</button>
+        <button data-tab="entries">暗号记录</button>
+        <button data-tab="bulk">批量导入</button>
+        <button data-tab="feedback">反馈<span id="fbBadge" style="display:none"></span></button>
+        <button data-tab="platforms">平台</button>
+        <button data-tab="settings">设置</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a class="btn sm ghost" href="/" target="_blank">前台</a>
+        <button class="btn sm ghost" id="logoutBtn">退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 概览 -->
+    <section class="panel on" id="panel-dash">
+      <div class="kv" id="dashStats"></div>
+      <div class="table-card">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><b>各平台记录数</b></div>
+        <div class="tbl-scroll"><table class="tbl"><tbody id="dashPlat"></tbody></table></div>
+      </div>
+
+      <div class="card" style="padding:20px;margin-top:16px">
+        <h3 style="margin:0 0 4px">手机 / 局域网访问地址</h3>
+        <p class="tiny muted" style="margin-top:0">手机与电脑连同一个 Wi-Fi 时，用下面的地址即可在手机浏览器打开。</p>
+        <div id="netList" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+        <p class="tiny muted" style="margin-bottom:0">若手机打不开，检查 Windows 防火墙是否放行该端口（默认 3000）。</p>
+      </div>
+    </section>
+
+    <!-- 成员 -->
+    <section class="panel" id="panel-people">
+      <div class="toolbar">
+        <input class="input grow" id="pQ" placeholder="搜索成员姓名…">
+        <select class="select" id="pGroup"><option value="">全部分组</option></select>
+        <div class="spacer"></div>
+        <button class="btn primary" id="pAdd">+ 新增成员</button>
+        <button class="btn ghost" id="pReload">刷新</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead><tr><th style="width:60px">ID</th><th>姓名</th><th>分组</th><th style="width:90px">记录数</th><th style="width:170px">操作</th></tr></thead>
+            <tbody id="pBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="pCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 暗号记录 -->
+    <section class="panel" id="panel-entries">
+      <div class="toolbar">
+        <input class="input grow" id="eQ" placeholder="搜索暗号 / 短链 / 姓名…">
+        <select class="select" id="ePlat"><option value="">全部平台</option></select>
+        <select class="select" id="eGroup"><option value="">全部分组</option></select>
+        <select class="select" id="eKind">
+          <option value="">全部类型</option>
+          <option value="code">暗号</option>
+          <option value="link">短链</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn primary" id="eAdd">+ 新增记录</button>
+        <button class="btn ghost" id="eReload">刷新</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:56px">ID</th><th style="width:110px">成员</th><th style="width:110px">平台</th>
+              <th style="width:180px">暗号 / 短链</th><th style="width:70px">类型</th><th>链接</th><th style="width:150px">操作</th>
+            </tr></thead>
+            <tbody id="eBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="eCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 批量导入 -->
+    <section class="panel" id="panel-bulk">
+      <div class="card" style="padding:20px">
+        <h3 style="margin:0 0 6px">批量粘贴导入</h3>
+        <p class="tiny muted" style="margin-top:0">
+          每行一条，用空格 / 逗号 / 制表符分隔：<br>
+          <code>姓名 暗号 平台 类型 链接</code> &nbsp;·&nbsp; 平台可写 <code>threads / ins / tik / x / fb / 视频 / 短链 / 图文</code><br>
+          例：<code>张三 1234 ins</code>、<code>张三 laya-zs-tw 短链 图文 https://...</code><br>
+          成员不存在会自动创建；<code>#</code> 开头为注释行。
+        </p>
+        <div class="form-grid" style="margin:14px 0">
+          <div><label class="tiny muted">默认平台（行内未写平台时使用）</label>
+            <select class="select" id="bPlat"></select></div>
+          <div><label class="tiny muted">默认类型</label>
+            <input class="input" id="bType" placeholder="留空 / 图文 / 视频"></div>
+          <div><label class="tiny muted">新成员默认分组</label>
+            <input class="input" id="bGroup" placeholder="例如 Laya"></div>
+        </div>
+        <textarea class="textarea" id="bText" placeholder="张三 1234 ins&#10;张三 5678 tik&#10;张三 laya-zs-tw 短链 图文 https://app.adjust.com/xxxx"></textarea>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" id="bSubmit">导入</button>
+          <button class="btn ghost" id="bDemo">填入示例</button>
+        </div>
+        <div id="bResult" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <!-- 反馈 -->
+    <section class="panel" id="panel-feedback">
+      <div class="toolbar">
+        <select class="select" id="fStatus">
+          <option value="new">未处理</option>
+          <option value="all">全部</option>
+          <option value="done">已处理</option>
+        </select>
+        <div class="spacer"></div>
+        <span class="tiny muted" id="fbStats"></span>
+        <button class="btn ghost" id="fReload">刷新</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:130px">时间</th><th style="width:100px">称呼</th><th style="width:140px">联系方式</th>
+              <th>反馈内容</th><th style="width:80px">状态</th><th style="width:150px">操作</th>
+            </tr></thead>
+            <tbody id="fBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="fCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 平台 -->
+    <section class="panel" id="panel-platforms">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <h3 style="margin:0">平台管理</h3>
+          <div class="spacer"></div>
+          <button class="btn primary" id="plAdd">+ 新增平台</button>
+        </div>
+        <div class="plat-editor" id="plList"></div>
+        <p class="tiny muted" style="margin-bottom:0;margin-top:14px">提示：有记录占用的平台不能直接删除。颜色用于前台标签展示。</p>
+      </div>
+    </section>
+
+    <!-- 设置 -->
+    <section class="panel" id="panel-settings">
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <h3 style="margin:0 0 14px">站点信息</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted">站点名称</label><input class="input" id="sName"></div>
+          <div><label class="tiny muted">副标题</label><input class="input" id="sSub"></div>
+        </div>
+        <div style="margin-top:12px"><label class="tiny muted">分组（英文逗号分隔）</label><input class="input" id="sGroups" placeholder="Laya, Sonka, 长沙"></div>
+        <div style="margin-top:12px"><label class="tiny muted">Logo 图片路径（英文逗号分隔，第 1 个为默认）</label><input class="input" id="sLogos" placeholder="/assets/Laya.png, /assets/Laya2.png"></div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" id="sSave">保存</button>
+          <span class="tiny muted">前台标题栏有「切换 Logo」按钮，可在这些图片之间轮换</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <h3 style="margin:0 0 14px">问题反馈配置</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted">标题</label><input class="input" id="fbTitle" placeholder="问题反馈"></div>
+          <div><label class="tiny muted">说明文字</label><input class="input" id="fbDesc" placeholder="查不到暗号、信息有误…"></div>
+        </div>
+        <label class="tiny muted" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+          <input type="checkbox" id="fbEnable" style="width:16px;height:16px"> 开启访客留言表单
+        </label>
+
+        <div style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <b class="tiny">联系方式</b>
+            <div class="spacer"></div>
+            <button class="btn sm" id="ctAdd">+ 添加</button>
+          </div>
+          <div id="ctList" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div class="tiny muted" style="margin-top:8px">留空值则不显示。类型建议：微信 / QQ / 邮箱 / 电话 / Telegram。</div>
+        </div>
+
+        <div style="margin-top:14px"><button class="btn primary" id="fbSave">保存反馈配置</button></div>
+      </div>
+
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <h3 style="margin:0 0 14px">修改密码</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted">原密码</label><input class="input" id="op" type="password"></div>
+          <div><label class="tiny muted">新密码（至少 6 位）</label><input class="input" id="np" type="password"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn primary" id="pwSave">修改密码</button></div>
+      </div>
+
+      <div class="card" style="padding:20px">
+        <h3 style="margin:0 0 14px">数据备份与恢复</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" id="expBtn">导出 JSON</button>
+          <button class="btn" id="bakBtn">创建服务器备份</button>
+          <button class="btn ghost" id="impBtn">从 JSON 恢复</button>
+          <input type="file" id="impFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="tiny muted" style="margin-bottom:0">恢复会覆盖当前全部数据，操作前会自动备份一次。</p>
+        <div id="dataMsg" class="tiny" style="margin-top:10px"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-mask" id="mask">
+  <div class="modal">
+    <header><h3 id="mTitle">标题</h3><button class="x" id="mClose">×</button></header>
+    <div class="body" id="mBody"></div>
+    <footer><button class="btn ghost" id="mCancel">取消</button><button class="btn primary" id="mOk">确定</button></footer>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>

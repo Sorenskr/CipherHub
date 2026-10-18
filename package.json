@@ -1,0 +1,16 @@
+{
+  "name": "cipherhub",
+  "version": "1.1.0",
+  "private": true,
+  "description": "CipherHub · 暗号查询中心 —— 支持 Threads / Instagram / TikTok / X / Facebook / 视频 / 短链 的姓名与暗号双向查询，含后台管理、问题反馈与多端适配",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "import": "python tools/import_excel.py"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {}
+}
