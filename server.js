@@ -199,6 +199,23 @@ const routes = {
 
   'GET /api/stats': (req, res) => sendJson(res, 200, store.stats()),
 
+  // 部署自检：确认 public/ 与 data/ 是否被打进函数包
+  'GET /api/health': (req, res) => {
+    let root = [];
+    try { root = fs.readdirSync(__dirname).slice(0, 60); } catch (e) { root = ['ERR:' + e.message]; }
+    sendJson(res, 200, {
+      ok: true,
+      node: process.version,
+      dir: __dirname,
+      root,
+      hasPublicIndex: fs.existsSync(path.join(__dirname, 'public', 'index.html')),
+      hasPublicAdmin: fs.existsSync(path.join(__dirname, 'public', 'admin.html')),
+      hasDataDb: fs.existsSync(path.join(__dirname, 'data', 'db.json')),
+      blob: !!process.env.BLOB_READ_WRITE_TOKEN,
+      stats: store.stats(),
+    });
+  },
+
   // 访客提交反馈（公开）
   'POST /api/feedback': async (req, res) => {
     let b;
