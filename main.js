@@ -1,7 +1,7 @@
 'use strict';
 /**
  * 暗号查询中心 —— 零依赖 Node HTTP 服务
- * 本地运行: node server.js    (默认端口 3000，可用 PORT 环境变量覆盖)
+ * 本地运行: node main.js    (默认端口 3000，可用 PORT 环境变量覆盖)
  * Vercel  : api/app.js 直接引用本模块导出的 handler
  */
 const http = require('http');

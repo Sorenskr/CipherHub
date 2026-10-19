@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless 入口
  * vercel.json 把所有请求 rewrite 到这里，req/res 就是标准 Node http 对象，
- * 因此可以直接复用 server.js 里的 requestListener。
+ * 因此可以直接复用 main.js 里的 requestListener。
  */
 let store = null;
 let handler = null;
@@ -15,10 +15,10 @@ try {
 }
 
 try {
-  handler = require('../server').handler;
+  handler = require('../main').handler;
 } catch (e) {
   bootError = bootError || e;
-  console.error('[boot] 加载 server.js 失败:', (e && e.stack) || e);
+  console.error('[boot] 加载 main.js 失败:', (e && e.stack) || e);
 }
 
 let ready = null;

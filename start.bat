@@ -5,9 +5,9 @@ title 暗号查询中心
 
 where node >nul 2>nul
 if %errorlevel%==0 (
-  node server.js
+  node main.js
 ) else if exist "%USERPROFILE%\.workbuddy\binaries\node\versions\22.22.2-6\node.exe" (
-  "%USERPROFILE%\.workbuddy\binaries\node\versions\22.22.2-6\node.exe" server.js
+  "%USERPROFILE%\.workbuddy\binaries\node\versions\22.22.2-6\node.exe" main.js
 ) else (
   echo.
   echo   未检测到 Node.js，请先安装： https://nodejs.org/zh-cn/download

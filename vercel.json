@@ -1,11 +1,12 @@
 {
-  "functions": {
-    "api/app.js": {
-      "maxDuration": 30,
-      "includeFiles": "**"
+  "builds": [
+    {
+      "src": "api/app.js",
+      "use": "@vercel/node",
+      "config": { "includeFiles": "**" }
     }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/app" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/api/app.js" }
   ]
 }

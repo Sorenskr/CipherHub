@@ -26,7 +26,7 @@ GitHub（源代码，main 分支）
 2. 启动服务
 
 ```bash
-node server.js
+node main.js
 # 前台：http://localhost:3000/
 # 后台：http://localhost:3000/admin
 ```
@@ -34,7 +34,7 @@ node server.js
 > 本项目零第三方依赖，无需 `npm install`。
 
 - 默认管理员账号：`admin`，密码：`admin123`（**登录后请立即在「设置」中修改**）
-- 换端口：`PORT=8080 node server.js`
+- 换端口：`PORT=8080 node main.js`
 
 ## 手机访问
 
@@ -68,7 +68,7 @@ node server.js
 
 ```
 .
-├── server.js            # 零依赖 HTTP 服务 + 全部 API
+├── main.js              # 零依赖 HTTP 服务 + 全部 API
 ├── lib/store.js         # JSON 数据读写、查询、脱敏抽样、反馈
 ├── public/
 │   ├── index.html       # 前台
@@ -171,7 +171,7 @@ python tools/build_static.py
 
 ## 部署到 Vercel（真·动态版）
 
-Vercel 的 Serverless Functions 能跑 Node，本项目已改造为可直接部署（`api/app.js` + `vercel.json`，`server.js` 导出了 `handler`）：
+Vercel 的 Serverless Functions 能跑 Node，本项目已改造为可直接部署（`api/app.js` + `vercel.json`，`main.js` 导出了 `handler`）：
 
 👉 见 **[deploy/vercel.md](deploy/vercel.md)**（导入项目、配 Vercel Blob 持久化、绑域名、排错）
 
@@ -200,7 +200,7 @@ docker run -p 8080:80 cipherhub
 ## 部署到国内服务器
 
 1. 安装 Node 14+，上传整个目录
-2. `node server.js`（建议配合 `pm2` / `systemd` / `screen` 常驻）
+2. `node main.js`（建议配合 `pm2` / `systemd` / `screen` 常驻）
 3. 用 Nginx 反向代理并绑定域名：
 
 ```nginx

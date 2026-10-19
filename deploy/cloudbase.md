@@ -28,7 +28,7 @@
 
 ```
 Dockerfile
-server.js
+main.js
 package.json
 lib/
 public/

@@ -13,9 +13,9 @@ Vercel 的 Serverless Functions 能跑 Node，所以这个版本是**真动态**
 Vercel 需要的文件都已就位：
 
 ```
-api/app.js          Serverless 入口（复用 server.js 的请求处理器）
+api/app.js          Serverless 入口（复用 main.js 的请求处理器）
 vercel.json         把所有请求 rewrite 到 api/app.js
-server.js           改为可导出 handler（本地运行不受影响）
+main.js             改为可导出 handler（本地运行不受影响）
 lib/store.js        增加可选的 Vercel Blob 持久化
 public/             前台 / 后台页面
 data/db.json        初始数据
@@ -57,7 +57,7 @@ Vercel 控制台 → 你的项目 → **Storage → Create → Blob** → 名字
 ```bash
 npm install          # 安装可选的 @vercel/blob
 vercel env pull      # 或手动在 .env 里写 BLOB_READ_WRITE_TOKEN=...
-node server.js
+node main.js
 ```
 
 没有 `BLOB_READ_WRITE_TOKEN` 时，行为退化为本地文件存储，功能和单机版完全一致。
