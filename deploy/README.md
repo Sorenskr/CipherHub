@@ -89,7 +89,7 @@
 | Build Command | **留空** | 无构建步骤 |
 | Output Directory | **留空** | 由函数运行时输出 |
 | Install Command | 留空（默认 `npm install`） | 安装 `@vercel/blob`（可选依赖） |
-| Node.js Version | 20.x | 由 `.nvmrc` / `engines` 决定 |
+| Node.js Version | 见下方说明 | Vercel 用项目设置，CloudBase 用 Dockerfile |
 
 ### 3.2 `vercel.json`（已就绪）
 
@@ -133,6 +133,9 @@ deploy  tools  data/backups  README.md  *.zip
 - 文件系统**只读且不持久**（`/tmp` 除外），所以数据必须走 Blob
 - 免费额度：100 GB 带宽 / 月，个人用足够
 - **国内访问不稳定**，可能需代理
+
+> **Node 版本说明**：Vercel 的 Node 版本由 **Settings → Functions → Node.js Version** 控制（默认 24.x），它优先于 `.nvmrc` / `engines`。
+> 代码在 Node 20 / 22 / 24 上都验证通过，无需刻意统一；CloudBase 侧由 `Dockerfile` 固定为 `node:20-alpine`。
 
 ---
 
