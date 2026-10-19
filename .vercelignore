@@ -10,8 +10,9 @@ data/backups
 server.out.log
 server.err.log
 README.md
+*.zip
 
-# 以下两项是 GitHub Pages 单页版产物，Vercel 版由 public/ 提供
-index.html
-admin.html
-assets
+# 根目录的本地生成物（前导斜杠 = 只排除根目录，不能误伤 public/ 下的同名文件）
+/index.html
+/admin.html
+/assets/

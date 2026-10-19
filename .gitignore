@@ -14,6 +14,9 @@ data/backups/
 /admin.html
 /assets/
 
+# 上传包 / 压缩文件
+*.zip
+
 # 原始素材图（已统一放到 public/assets/，根目录副本只是本地缓存）
 /Laya.png
 /Laya2.png
