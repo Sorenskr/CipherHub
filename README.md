@@ -8,9 +8,9 @@
 
 ```
 GitHub（源代码，main 分支）
-   ├─→ Vercel        真动态版（后台改完立即生效）      ← 推荐给国内用户改用 CloudBase
-   ├─→ CloudBase 云托管  真动态版、国内速度快
-   └─→ GitHub Pages  GitHub Actions 自动构建静态版
+   ├─→ Vercel             真动态版（Serverless）
+   ├─→ CloudBase 云托管    真动态版、国内访问快
+   └─→ GitHub Pages       GitHub Actions 自动构建静态版
 ```
 
 **约定：**
@@ -19,6 +19,8 @@ GitHub（源代码，main 分支）
 - 本地生成的静态页（`index.html` / `admin.html` / `assets/`）已被 `.gitignore` 排除，不入库
 - 需要时本地执行 `python tools/build_static.py` 生成
 - GitHub Pages 由 `.github/workflows/pages.yml` 在 CI 上构建并发布，main 保持干净
+
+> 📘 **双平台部署完整说明**（仓库结构、分支策略、`vercel.json` / `Dockerfile` 逐项配置、环境变量、两平台差异与踩坑记录）见 **[deploy/README.md](deploy/README.md)**
 
 ## 快速开始
 
@@ -245,4 +247,18 @@ python tools/import_excel.py
 ```bash
 python tools/smoke.py    # 基础查询 / 鉴权
 python tools/smoke2.py   # 反馈 / 配置 / 静态资源
+python tools/smoke_static.py   # 静态版结构 + 数据垫片
+
+# 本地模拟 Vercel Serverless 环境
+node tools/test_vercel_handler.js 8099
+CH_BASE=http://127.0.0.1:8099 python tools/smoke.py
 ```
+
+## 一键打包 CloudBase 上传包
+
+```bash
+python tools/make_upload_pkg.py     # 生成 cipherhub-cloudbase.zip
+```
+
+只打包 `Dockerfile` / `main.js` / `package.json` / `lib/` / `public/` / `data/db.json`，
+zip 本身被 `.gitignore` 忽略，不会进仓库。

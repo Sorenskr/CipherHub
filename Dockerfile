@@ -1,5 +1,5 @@
-# CloudBase 云托管 / 任意容器平台部署用
-FROM node:18-alpine
+# CloudBase 云托管 / 任意容器平台部署用（与 package.json engines 保持一致）
+FROM node:20-alpine
 
 WORKDIR /app
 

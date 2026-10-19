@@ -10,7 +10,7 @@
     "import": "python tools/import_excel.py"
   },
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   },
   "dependencies": {},
   "optionalDependencies": {
