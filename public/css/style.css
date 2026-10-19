@@ -274,6 +274,13 @@ mark {
 @keyframes logoPop { from { opacity: 0; transform: scale(0.7) rotate(-12deg); } to { opacity: 1; transform: none; } }
 #logoBtn { animation: none; }
 
+/* ============ 内置后台：打开时隐藏前台 ============ */
+body.adm-on > header.topbar,
+body.adm-on > main.wrap,
+body.adm-on > footer.foot,
+body.adm-on > .fb-fab { display: none !important; }
+body.adm-on { background: var(--bg-2); }
+
 /* ============ 问题反馈 ============ */
 .fb-sec { padding-top: 10px; }
 .fb-card {

@@ -289,6 +289,13 @@ mark {
 @keyframes logoPop { from { opacity: 0; transform: scale(0.7) rotate(-12deg); } to { opacity: 1; transform: none; } }
 #logoBtn { animation: none; }
 
+/* ============ 内置后台：打开时隐藏前台 ============ */
+body.adm-on > header.topbar,
+body.adm-on > main.wrap,
+body.adm-on > footer.foot,
+body.adm-on > .fb-fab { display: none !important; }
+body.adm-on { background: var(--bg-2); }
+
 /* ============ 问题反馈 ============ */
 .fb-sec { padding-top: 10px; }
 .fb-card {
@@ -1042,6 +1049,206 @@ table.tbl .ops { display: flex; gap: 6px; }
   </svg>
 </button>
 
+<!-- ===== 内置后台（默认隐藏，点 Logo 5 次唤出入口） ===== -->
+
+<!-- 口令门 -->
+<div id="admGate" class="login-page" style="display:none">
+  <form class="card login-card" id="admGateForm">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="logo" id="admGateLogo" style="width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#ff5c8a);color:#fff;font-weight:800;overflow:hidden">#</span>
+      <b style="font-size:17px" id="admGateTitle">管理后台</b>
+    </div>
+    <div class="tiny muted" style="margin-bottom:6px">输入口令进入后台</div>
+    <div class="row">
+      <label class="tiny muted">口令</label>
+      <input class="input" id="admGatePass" type="password" autocomplete="current-password" placeholder="访问口令">
+    </div>
+    <div class="err-text" id="admGateErr"></div>
+    <button class="btn primary" type="submit" id="admGateBtn">进 入</button>
+    <div class="tiny muted" style="margin-top:14px;text-align:center">
+      <a href="#" id="admGateCancel">返回前台</a>
+    </div>
+  </form>
+</div>
+
+<div id="admRoot" style="display:none">
+  <header class="admin-head">
+    <div class="wrap">
+      <a class="brand" href="#" id="admHome">
+        <span class="logo" id="admBrandLogoBox" style="overflow:hidden"><img id="admBrandLogo" src="" alt="logo"></span>
+        <span>管理后台</span>
+      </a>
+      <div class="tabs" id="admTabs">
+        <button data-tab="dash" class="on">概览</button>
+        <button data-tab="people">成员</button>
+        <button data-tab="entries">暗号记录</button>
+        <button data-tab="bulk">批量导入</button>
+        <button data-tab="platforms">平台</button>
+        <button data-tab="settings">站点设置</button>
+        <button data-tab="export">导出发布</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button class="btn sm ghost" id="admExit">退出后台</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="admDraftBar" class="tip-bar" style="display:none;margin-top:18px">
+      已载入本机草稿 <b id="admDraftTime"></b>（未导出，仅本浏览器可见）
+      <button class="btn sm ghost" id="admDraftDrop" style="margin-left:8px">放弃草稿</button>
+    </div>
+
+    <section class="panel on" id="adm-panel-dash">
+      <div class="kv" id="admDashStats"></div>
+      <div class="card" style="padding:20px;margin-top:16px">
+        <h3 style="margin:0 0 4px">怎么让所有人看到最新数据</h3>
+        <ol class="tiny muted" style="margin:0;padding-left:20px;line-height:1.9">
+          <li>在这里改数据（改动立刻在本页生效，并自动存本机草稿）</li>
+          <li>到「导出发布」下载 <b>index.html</b> 和 <b>db.json</b></li>
+          <li>覆盖仓库根目录文件后 <code>git commit &amp;&amp; git push</code></li>
+          <li>1~2 分钟后所有人刷新前台就是最新版</li>
+        </ol>
+      </div>
+      <div class="table-card" style="margin-top:16px">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><b>各平台记录数</b></div>
+        <div class="tbl-scroll"><table class="tbl"><tbody id="admDashPlat"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-people">
+      <div class="toolbar">
+        <input class="input grow" id="admPQ" placeholder="搜索成员姓名…">
+        <select class="select" id="admPGroup"><option value="">全部分组</option></select>
+        <div class="spacer"></div>
+        <button class="btn primary" id="admPAdd">+ 新增成员</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead><tr><th style="width:60px">ID</th><th>姓名</th><th>分组</th><th style="width:90px">记录数</th><th style="width:170px">操作</th></tr></thead>
+            <tbody id="admPBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="admPCount"></span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-entries">
+      <div class="toolbar">
+        <input class="input grow" id="admEQ" placeholder="搜索暗号 / 短链 / 姓名…">
+        <select class="select" id="admEPlat"><option value="">全部平台</option></select>
+        <select class="select" id="admEGroup"><option value="">全部分组</option></select>
+        <div class="spacer"></div>
+        <button class="btn primary" id="admEAdd">+ 新增记录</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:56px">ID</th><th style="width:110px">成员</th><th style="width:110px">平台</th>
+              <th style="width:180px">暗号 / 短链</th><th style="width:70px">类型</th><th>链接</th><th style="width:150px">操作</th>
+            </tr></thead>
+            <tbody id="admEBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="admECount"></span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-bulk">
+      <div class="card" style="padding:20px">
+        <h3 style="margin:0 0 6px">批量粘贴导入</h3>
+        <p class="tiny muted" style="margin-top:0">
+          每行一条，空格 / 逗号 / 制表符分隔：<code>姓名 暗号 平台 类型 链接</code><br>
+          平台可写 <code>threads / ins / tik / x / fb / 视频 / 短链 / 图文</code>；<code>#</code> 开头为注释。
+        </p>
+        <div class="form-grid" style="margin:14px 0">
+          <div><label class="tiny muted">默认平台</label><select class="select" id="admBPlat"></select></div>
+          <div><label class="tiny muted">新成员默认分组</label><input class="input" id="admBGroup" placeholder="例如 Laya"></div>
+        </div>
+        <textarea class="textarea" id="admBText" placeholder="张三 1234 ins&#10;张三 5678 tik"></textarea>
+        <div style="margin-top:14px"><button class="btn primary" id="admBSubmit">导入</button></div>
+        <div id="admBResult" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-platforms">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <h3 style="margin:0">平台管理</h3><div class="spacer"></div>
+          <button class="btn primary" id="admPlAdd">+ 新增平台</button>
+        </div>
+        <div class="plat-editor" id="admPlList"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-settings">
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <h3 style="margin:0 0 14px">站点信息</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted">站点名称</label><input class="input" id="admSName"></div>
+          <div><label class="tiny muted">副标题</label><input class="input" id="admSSub"></div>
+        </div>
+        <div style="margin-top:12px"><label class="tiny muted">分组（英文逗号分隔）</label><input class="input" id="admSGroups"></div>
+        <div style="margin-top:12px"><label class="tiny muted">Logo 路径（英文逗号分隔）</label><input class="input" id="admSLogos"></div>
+        <div style="margin-top:14px"><button class="btn primary" id="admSSave">保存</button></div>
+      </div>
+
+      <div class="card" style="padding:20px">
+        <h3 style="margin:0 0 14px">问题反馈区</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted">标题</label><input class="input" id="admFbTitle"></div>
+          <div><label class="tiny muted">说明</label><input class="input" id="admFbDesc"></div>
+        </div>
+        <label class="tiny muted" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+          <input type="checkbox" id="admFbEnable" style="width:16px;height:16px"> 开启访客留言表单
+        </label>
+        <div style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <b class="tiny">联系方式</b><div class="spacer"></div>
+            <button class="btn sm" id="admCtAdd">+ 添加</button>
+          </div>
+          <div id="admCtList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn primary" id="admFbSave">保存反馈配置</button></div>
+      </div>
+    </section>
+
+    <section class="panel" id="adm-panel-export">
+      <div class="card" style="padding:20px">
+        <h3 style="margin:0 0 6px">导出并发布</h3>
+        <p class="tiny muted" style="margin-top:0">下载后覆盖仓库根目录文件，再 <code>git commit &amp;&amp; git push</code>，1~2 分钟生效。</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn primary" id="admExpIndex">下载 index.html</button>
+          <button class="btn" id="admExpDb">下载 db.json</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <button class="btn ghost" id="admImpDb">导入 db.json 继续编辑</button>
+          <input type="file" id="admImpFile" accept="application/json,.json" hidden>
+          <button class="btn danger" id="admDropDraft">清除本机草稿</button>
+        </div>
+        <div id="admExpMsg" class="tiny" style="margin-top:12px"></div>
+      </div>
+      <div class="card" style="padding:20px;margin-top:16px">
+        <h3 style="margin:0 0 10px">当前数据</h3>
+        <div class="kv" id="admExpStats"></div>
+        <div class="tiny muted">最近保存：<span id="admExpTime">-</span>　·　草稿存在本机浏览器，换设备会丢失，重要改动请导出。</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-mask" id="admMask">
+  <div class="modal">
+    <header><h3 id="admMTitle">标题</h3><button class="x" id="admMClose">×</button></header>
+    <div class="body" id="admMBody"></div>
+    <footer><button class="btn ghost" id="admMCancel">取消</button><button class="btn primary" id="admMOk">确定</button></footer>
+  </div>
+</div>
+
+<div id="admToast"></div>
+
 <div class="tip-bar" style="margin-top:16px">当前为<b>静态版</b>：查询功能完整可用，数据快照由后台导出生成。</div>
 <div id="toast"></div>
 
@@ -1058,6 +1265,16 @@ table.tbl .ops { display: flex; gap: 6px; }
   'use strict';
 
   var DATA = window.__DATA__ || {};
+
+  // 若本机有后台草稿（未导出），优先展示草稿，让本机看到自己的改动
+  try {
+    var _d = localStorage.getItem('ch_admin_draft');
+    if (_d) {
+      var _dd = JSON.parse(_d);
+      if (_dd && _dd.db) DATA = _dd.db;
+    }
+  } catch (e) {}
+
   var PLATFORMS = DATA.platforms || [];
   var PEOPLE = DATA.people || [];
   var ENTRIES = DATA.entries || [];
@@ -1067,6 +1284,19 @@ table.tbl .ops { display: flex; gap: 6px; }
   var PM = {}, PEM = {};
   PLATFORMS.forEach(function (p) { PM[p.id] = p; });
   PEOPLE.forEach(function (p) { PEM[p.id] = p; });
+
+  /** 后台改动后同步给前台，使本页立即生效 */
+  window.__CH_SET_DATA__ = function (d) {
+    DATA = d || {};
+    PLATFORMS = DATA.platforms || [];
+    PEOPLE = DATA.people || [];
+    ENTRIES = DATA.entries || [];
+    GROUPS = DATA.groups || [];
+    SETTINGS = DATA.settings || {};
+    PM = {}; PEM = {};
+    PLATFORMS.forEach(function (p) { PM[p.id] = p; });
+    PEOPLE.forEach(function (p) { PEM[p.id] = p; });
+  };
 
   function fixAsset(u) {
     return String(u || '').replace(/^\/?assets\//, 'assets/');
@@ -2160,6 +2390,14 @@ table.tbl .ops { display: flex; gap: 6px; }
     });
     refreshSamples();
 
+    // 供内置后台在改完数据后刷新前台
+    window.__CH_REFRESH__ = function () {
+      try { renderFilters(); renderStats(); renderMatrix(); } catch (e) {}
+      refreshSamples();
+      switchView();
+      doSearch();
+    };
+
     var m = location.hash.match(/q=([^&]*)/);
     if (m) {
       state.q = decodeURIComponent(m[1]);
@@ -2173,6 +2411,721 @@ table.tbl .ops { display: flex; gap: 6px; }
   }).catch(function () {
     $('#results').style.display = '';
     $('#results').innerHTML = '<div class="empty"><div class="big">⚠️</div>服务未启动或加载失败</div>';
+  });
+})();
+
+</script>
+<script>window.__ADMIN_PASS__="admin123";</script>
+<script>window.__TPL__={"index": "<!DOCTYPE html>\n<html lang=\"zh-CN\" data-theme=\"dark\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5\">\n<meta name=\"theme-color\" content=\"#0b0e14\">\n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"format-detection\" content=\"telephone=no\">\n<meta name=\"description\" content=\"CipherHub · 输入姓名或暗号，秒查 Threads / Instagram / TikTok / X / Facebook / 视频 / 短链 全平台归属\">\n<title>CipherHub · 暗号查询中心<\/title>\n<link rel=\"icon\" type=\"image/png\" href=\"assets/logo.png\">\n<link rel=\"apple-touch-icon\" href=\"assets/logo.png\">\n<link rel=\"stylesheet\" href=\"/css/style.css\">\n<\/head>\n<body>\n\n<!-- 不间断背景动效 -->\n<div class=\"bg\" aria-hidden=\"true\">\n  <div class=\"aurora\"><i><\/i><i><\/i><i><\/i><i><\/i><\/div>\n  <div class=\"grid\"><\/div>\n  <div class=\"dots\" id=\"bgDots\"><\/div>\n<\/div>\n\n<header class=\"topbar\">\n  <div class=\"wrap\">\n    <a class=\"brand\" href=\"/\">\n      <span class=\"logo\" id=\"logoBox\"><img id=\"brandLogo\" src=\"\" alt=\"logo\"><\/span>\n      <span id=\"siteName\">暗号查询中心<\/span>\n    <\/a>\n    <button class=\"icon-btn\" id=\"logoBtn\" title=\"切换 Logo\" aria-label=\"切换 Logo\">\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n        <path d=\"M17 2l4 4-14 14-4-4z\"/><path d=\"M15 4l4 4\"/><path d=\"M2 14h8v8\"/>\n      <\/svg>\n    <\/button>\n    <nav>\n      <a href=\"/\">查询<\/a>\n      <a href=\"#discover\" id=\"navDiscover\">速览<\/a>\n      <a href=\"#feedback\" id=\"navFeedback\">反馈<\/a>\n      <button class=\"icon-btn\" id=\"themeBtn\" title=\"切换主题\" aria-label=\"切换主题\">\n        <svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\">\n          <path d=\"M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z\"/>\n        <\/svg>\n      <\/button>\n    <\/nav>\n  <\/div>\n<\/header>\n\n<main class=\"wrap\">\n  <section class=\"hero\">\n    <h1>输入 <em>姓名<\/em> 或 <em>暗号<\/em>，秒查全平台归属<\/h1>\n    <p id=\"subtitle\">覆盖 Threads、Instagram、TikTok、X、Facebook、视频、短链 —— 支持正查与反查<\/p>\n\n    <div class=\"searchbox\" id=\"searchbox\">\n      <div class=\"field\">\n        <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\">\n          <circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-3.5-3.5\"/>\n        <\/svg>\n        <input id=\"q\" type=\"search\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"加载中…\">\n        <button class=\"clear\" id=\"clearBtn\" title=\"清空\" aria-label=\"清空\">\n          <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M6 6l12 12M18 6L6 18\"/><\/svg>\n        <\/button>\n      <\/div>\n      <div class=\"suggest\" id=\"suggest\"><\/div>\n    <\/div>\n\n    <div class=\"filters\">\n      <div class=\"chip-row\" id=\"platFilter\"><\/div>\n      <div class=\"chip-row\" id=\"groupFilter\"><\/div>\n    <\/div>\n  <\/section>\n\n  <section class=\"stats\" id=\"stats\"><\/section>\n\n  <!-- 脱敏速览（替代原来的成员列表）—— 每次刷新都不一样 -->\n  <section id=\"discover\" class=\"discover\">\n    <div class=\"sec-head\">\n      <h2>平台速览<\/h2>\n      <span class=\"n\" id=\"discoverNote\">点击任意平台查看该平台随机样本<\/span>\n      <span class=\"spacer\"><\/span>\n      <button class=\"btn sm ghost\" id=\"shuffleAll\">换一批<\/button>\n    <\/div>\n\n    <div class=\"matrix\" id=\"matrix\"><\/div>\n\n    <div class=\"marquee\"><div class=\"track\" id=\"mqTrack\"><\/div><\/div>\n\n    <div class=\"spot\">\n      <div class=\"spot-in\">\n        <div class=\"spot-label\">随机聚焦 · 内容已脱敏<\/div>\n        <div class=\"spot-body\" id=\"spotBody\"><\/div>\n        <div class=\"spot-foot\">\n          <span class=\"spot-dots\" id=\"spotDots\"><\/span>\n          <span class=\"spacer\"><\/span>\n          <button class=\"btn sm ghost\" id=\"spotMore\">换一个<\/button>\n        <\/div>\n      <\/div>\n    <\/div>\n\n    <div id=\"previewBox\" class=\"preview\" style=\"display:none\">\n      <div class=\"sec-head\">\n        <h2 id=\"pvTitle\">随机样本<\/h2>\n        <span class=\"n\" id=\"pvNote\"><\/span>\n      <\/div>\n      <div class=\"pv-grid\" id=\"pvGrid\"><\/div>\n    <\/div>\n\n    <div class=\"tip-bar\">\n      以上均为<b>随机抽样并脱敏<\/b>的展示，不是完整名单。<br>\n      想知道某条暗号属于谁、或某个人有哪些暗号 —— 在上方输入<b>姓名 / 暗号 / 短链<\/b>即可。\n    <\/div>\n  <\/section>\n\n  <section id=\"results\" style=\"display:none\"><\/section>\n\n  <!-- 问题反馈 / 联系方式 -->\n  <section id=\"feedback\" class=\"fb-sec\">\n    <div class=\"sec-head\">\n      <h2 id=\"fbTitle\">问题反馈<\/h2>\n      <span class=\"n\" id=\"fbSub\"><\/span>\n    <\/div>\n    <div class=\"card fb-card\">\n      <div class=\"fb-left\">\n        <p class=\"fb-desc\" id=\"fbDesc\"><\/p>\n        <div class=\"contacts\" id=\"fbContacts\"><\/div>\n        <div class=\"tiny muted\" id=\"fbEmpty\" style=\"display:none\">管理员暂未填写联系方式，可直接用右侧表单留言。<\/div>\n      <\/div>\n      <form class=\"fb-form\" id=\"fbForm\">\n        <div class=\"form-grid\">\n          <input class=\"input\" id=\"fbName\" maxlength=\"40\" placeholder=\"你的称呼（选填）\">\n          <input class=\"input\" id=\"fbContact\" maxlength=\"80\" placeholder=\"联系方式：微信 / QQ / 邮箱（选填）\">\n        <\/div>\n        <textarea class=\"textarea\" id=\"fbMsg\" maxlength=\"1000\" required placeholder=\"描述遇到的问题，例如：查不到某某的 Instagram 暗号 / 某某的短链失效了…\"><\/textarea>\n        <div class=\"fb-foot\">\n          <span class=\"tiny muted\" id=\"fbTip\">提交后管理员会在后台看到<\/span>\n          <button class=\"btn primary\" type=\"submit\" id=\"fbSubmit\">提交反馈<\/button>\n        <\/div>\n      <\/form>\n    <\/div>\n  <\/section>\n<\/main>\n\n<footer class=\"foot\">\n  <div><b>CipherHub<\/b> · 暗号查询中心 · 数据由管理员维护<\/div>\n  <div class=\"tiny\" style=\"margin-top:6px\" id=\"updatedAt\"><\/div>\n<\/footer>\n\n<button class=\"fb-fab\" id=\"fbFab\" title=\"问题反馈\" aria-label=\"问题反馈\">\n  <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n    <path d=\"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z\"/>\n  <\/svg>\n<\/button>\n\n<div id=\"toast\"><\/div>\n\n<script src=\"/js/app.js\"><\/script>\n<\/body>\n<\/html>\n", "css": "/* ============ 设计变量 ============ */\n:root {\n  --bg: #0b0e14;\n  --bg-2: #0f131c;\n  --surface: rgba(255, 255, 255, 0.045);\n  --surface-2: rgba(255, 255, 255, 0.075);\n  --border: rgba(255, 255, 255, 0.1);\n  --border-strong: rgba(255, 255, 255, 0.18);\n  --text: #e8ecf4;\n  --text-dim: #9aa4b8;\n  --text-mute: #6b7488;\n  --brand: #7c5cff;\n  --brand-2: #3ea6ff;\n  --brand-3: #ff5c8a;\n  --ok: #28c76f;\n  --warn: #ffb020;\n  --danger: #ff4d6d;\n  --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);\n  --radius: 16px;\n  --radius-sm: 10px;\n  --mono: ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, \"Liberation Mono\", monospace;\n}\n\nhtml[data-theme=\"light\"] {\n  --bg: #f4f6fb;\n  --bg-2: #eaeef7;\n  --surface: rgba(255, 255, 255, 0.88);\n  --surface-2: #ffffff;\n  --border: rgba(15, 20, 32, 0.1);\n  --border-strong: rgba(15, 20, 32, 0.18);\n  --text: #131824;\n  --text-dim: #55607a;\n  --text-mute: #8891a6;\n  --shadow: 0 14px 36px rgba(23, 33, 60, 0.12);\n}\n\n* { box-sizing: border-box; }\n\nhtml, body { height: 100%; }\n\nbody {\n  margin: 0;\n  background: var(--bg);\n  color: var(--text);\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Hiragino Sans GB\",\n    \"Microsoft YaHei\", \"Helvetica Neue\", Arial, sans-serif;\n  font-size: 15px;\n  line-height: 1.6;\n  -webkit-font-smoothing: antialiased;\n  -webkit-text-size-adjust: 100%;\n  overflow-x: hidden;\n}\n\n/* ============ 背景动效（不间断） ============ */\n.bg {\n  position: fixed;\n  inset: 0;\n  z-index: -1;\n  overflow: hidden;\n  pointer-events: none;\n}\n\n/* 极光光斑 */\n.bg .aurora {\n  position: absolute;\n  inset: -25vh -20vw;\n  filter: blur(30px);\n}\n.bg .aurora i {\n  position: absolute;\n  display: block;\n  border-radius: 50%;\n  mix-blend-mode: screen;\n  will-change: transform;\n}\n.bg .aurora i:nth-child(1) {\n  width: 46vw; height: 46vw; left: -6vw; top: -8vh;\n  background: radial-gradient(circle, rgba(124, 92, 255, 0.55), transparent 68%);\n  animation: au1 21s ease-in-out infinite;\n}\n.bg .aurora i:nth-child(2) {\n  width: 40vw; height: 40vw; right: -8vw; top: 4vh;\n  background: radial-gradient(circle, rgba(62, 166, 255, 0.45), transparent 68%);\n  animation: au2 26s ease-in-out infinite;\n}\n.bg .aurora i:nth-child(3) {\n  width: 44vw; height: 44vw; left: 26vw; bottom: -18vh;\n  background: radial-gradient(circle, rgba(255, 92, 138, 0.36), transparent 68%);\n  animation: au3 31s ease-in-out infinite;\n}\n.bg .aurora i:nth-child(4) {\n  width: 30vw; height: 30vw; left: 55vw; top: 30vh;\n  background: radial-gradient(circle, rgba(0, 200, 180, 0.3), transparent 68%);\n  animation: au1 24s ease-in-out infinite reverse;\n}\nhtml[data-theme=\"light\"] .bg .aurora { opacity: 0.5; filter: blur(40px); }\n\n@keyframes au1 {\n  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }\n  33%      { transform: translate3d(10vw, 8vh, 0) scale(1.18); }\n  66%      { transform: translate3d(-6vw, 14vh, 0) scale(0.92); }\n}\n@keyframes au2 {\n  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }\n  40%      { transform: translate3d(-12vw, 12vh, 0) scale(0.9); }\n  70%      { transform: translate3d(4vw, -8vh, 0) scale(1.2); }\n}\n@keyframes au3 {\n  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }\n  50%      { transform: translate3d(14vw, -14vh, 0) scale(1.15); }\n}\n\n/* 缓慢平移的网格 */\n.bg .grid {\n  position: absolute;\n  inset: -10%;\n  background-image:\n    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),\n    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);\n  background-size: 54px 54px;\n  -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 32%, #000 20%, transparent 78%);\n  mask-image: radial-gradient(ellipse 70% 55% at 50% 32%, #000 20%, transparent 78%);\n  animation: gridPan 24s linear infinite;\n}\nhtml[data-theme=\"light\"] .bg .grid { opacity: 0.5; }\n@keyframes gridPan {\n  to { background-position: 54px 54px; }\n}\n\n/* 上升的粒子 */\n.bg .dots i {\n  position: absolute;\n  bottom: -6vh;\n  width: var(--s); height: var(--s);\n  border-radius: 50%;\n  background: var(--c);\n  opacity: 0;\n  animation: rise linear infinite;\n  will-change: transform, opacity;\n}\n@keyframes rise {\n  0%   { transform: translate3d(0, 0, 0) scale(0.5); opacity: 0; }\n  12%  { opacity: 0.75; }\n  85%  { opacity: 0.35; }\n  100% { transform: translate3d(var(--dx), -112vh, 0) scale(1.1); opacity: 0; }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .bg .aurora i, .bg .grid, .bg .dots i { animation: none !important; }\n}\n\na { color: inherit; text-decoration: none; }\nbutton, input, select, textarea { font: inherit; color: inherit; }\nbutton { cursor: pointer; }\n\n::selection { background: rgba(124, 92, 255, 0.4); }\n\n/* 滚动条 */\n::-webkit-scrollbar { width: 10px; height: 10px; }\n::-webkit-scrollbar-thumb {\n  background: var(--border-strong);\n  border-radius: 8px;\n  border: 3px solid transparent;\n  background-clip: content-box;\n}\n::-webkit-scrollbar-track { background: transparent; }\n\n/* ============ 通用组件 ============ */\n.wrap { width: min(1180px, 100%); margin: 0 auto; padding: 0 20px; }\n\n.card {\n  background: var(--surface);\n  border: 1px solid var(--border);\n  border-radius: var(--radius);\n  backdrop-filter: blur(14px);\n  -webkit-backdrop-filter: blur(14px);\n}\n\n.btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  padding: 9px 16px;\n  border-radius: 999px;\n  border: 1px solid var(--border-strong);\n  background: var(--surface-2);\n  color: var(--text);\n  font-size: 14px;\n  transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.2s;\n  white-space: nowrap;\n}\n.btn:hover { transform: translateY(-1px); border-color: var(--brand); box-shadow: 0 6px 18px rgba(124, 92, 255, 0.22); }\n.btn:active { transform: translateY(0); }\n.btn.primary {\n  background: linear-gradient(120deg, var(--brand), var(--brand-2));\n  border-color: transparent;\n  color: #fff;\n  font-weight: 600;\n}\n.btn.ghost { background: transparent; }\n.btn.sm { padding: 5px 12px; font-size: 13px; }\n.btn.danger { border-color: rgba(255, 77, 109, 0.5); color: var(--danger); }\n.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }\n\n.input, .select, .textarea {\n  width: 100%;\n  padding: 11px 14px;\n  border-radius: var(--radius-sm);\n  border: 1px solid var(--border-strong);\n  background: var(--surface-2);\n  outline: none;\n  transition: border-color 0.2s, box-shadow 0.2s;\n}\n.input:focus, .select:focus, .textarea:focus {\n  border-color: var(--brand);\n  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.2);\n}\n.textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: 13px; }\n.select { appearance: none; background-image: none; }\n\n.muted { color: var(--text-dim); }\n.tiny { font-size: 12.5px; }\n\n.tag {\n  display: inline-flex;\n  align-items: center;\n  gap: 5px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  border: 1px solid var(--border);\n  background: var(--surface-2);\n  color: var(--text-dim);\n}\n\nmark {\n  background: rgba(255, 176, 32, 0.28);\n  color: inherit;\n  border-radius: 4px;\n  padding: 0 2px;\n}\n\n/* ============ 顶栏 ============ */\n.topbar {\n  position: sticky;\n  top: 0;\n  z-index: 50;\n  backdrop-filter: blur(16px);\n  -webkit-backdrop-filter: blur(16px);\n  background: color-mix(in srgb, var(--bg) 78%, transparent);\n  border-bottom: 1px solid var(--border);\n}\n.topbar .wrap {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n  height: 60px;\n}\n.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.3px; }\n.brand .logo {\n  width: 32px; height: 32px; border-radius: 10px;\n  display: grid; place-items: center;\n  background: linear-gradient(135deg, var(--brand), var(--brand-3));\n  color: #fff; font-size: 15px; font-weight: 800;\n  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.4);\n}\n.brand span { font-size: 16px; }\n.brand .logo { overflow: hidden; padding: 0; }\n.brand .logo img {\n  width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px;\n  animation: logoPop 0.45s cubic-bezier(.2,.7,.3,1.4);\n}\n@keyframes logoPop { from { opacity: 0; transform: scale(0.7) rotate(-12deg); } to { opacity: 1; transform: none; } }\n#logoBtn { animation: none; }\n\n/* ============ 内置后台：打开时隐藏前台 ============ */\nbody.adm-on > header.topbar,\nbody.adm-on > main.wrap,\nbody.adm-on > footer.foot,\nbody.adm-on > .fb-fab { display: none !important; }\nbody.adm-on { background: var(--bg-2); }\n\n/* ============ 问题反馈 ============ */\n.fb-sec { padding-top: 10px; }\n.fb-card {\n  display: grid;\n  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);\n  gap: 26px;\n  padding: 26px;\n  border-radius: 20px;\n  position: relative;\n  overflow: hidden;\n}\n.fb-card::before {\n  content: \"\";\n  position: absolute;\n  inset: -70% -20% auto auto;\n  width: 60%; height: 220%;\n  background: radial-gradient(circle, rgba(124, 92, 255, 0.22), transparent 62%);\n  filter: blur(30px);\n  animation: fbGlow 9s ease-in-out infinite;\n  pointer-events: none;\n}\n@keyframes fbGlow {\n  0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }\n  50%      { transform: translateY(-8%) scale(1.12); opacity: 1; }\n}\n.fb-left { position: relative; }\n.fb-desc { margin: 0 0 16px; color: var(--text-dim); font-size: 14px; }\n.contacts { display: flex; flex-direction: column; gap: 9px; }\n.ct {\n  display: flex; align-items: center; gap: 10px;\n  padding: 9px 13px; border-radius: 12px;\n  border: 1px solid var(--border); background: var(--surface-2);\n  transition: border-color 0.2s, transform 0.15s;\n}\n.ct:hover { border-color: var(--brand); transform: translateX(2px); }\n.ct .ty {\n  flex: none; min-width: 48px; text-align: center;\n  padding: 2px 8px; border-radius: 7px; font-size: 11.5px;\n  background: linear-gradient(120deg, var(--brand), var(--brand-2)); color: #fff;\n}\n.ct .vl { font-size: 14px; word-break: break-all; }\n.ct .cp { margin-left: auto; flex: none; border: none; background: transparent; color: var(--text-mute); padding: 4px 6px; border-radius: 6px; }\n.ct .cp:hover { color: var(--brand-2); background: var(--surface); }\n\n.fb-form { position: relative; display: flex; flex-direction: column; gap: 12px; }\n.fb-form .textarea { min-height: 130px; flex: 1; }\n.fb-foot { display: flex; align-items: center; gap: 12px; }\n.fb-foot .spacer { flex: 1; }\n\n.fb-fab {\n  position: fixed; right: 20px; bottom: 22px; z-index: 60;\n  width: 50px; height: 50px; border-radius: 50%;\n  display: grid; place-items: center;\n  border: 1px solid var(--border-strong);\n  background: linear-gradient(135deg, var(--brand), var(--brand-2));\n  color: #fff;\n  box-shadow: 0 12px 30px rgba(124, 92, 255, 0.42);\n  transition: transform 0.2s, box-shadow 0.2s;\n  animation: fabIn 0.5s 0.6s cubic-bezier(.2,.7,.3,1.4) both;\n}\n.fb-fab:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 16px 38px rgba(124, 92, 255, 0.55); }\n@keyframes fabIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }\n\n@media (prefers-reduced-motion: reduce) {\n  .fb-card::before, .brand .logo img, .fb-fab { animation: none !important; }\n}\n.topbar nav { margin-left: auto; display: flex; align-items: center; gap: 8px; }\n.topbar nav a {\n  padding: 6px 12px; border-radius: 999px; font-size: 14px; color: var(--text-dim);\n  transition: background 0.2s, color 0.2s;\n}\n.topbar nav a:hover { background: var(--surface-2); color: var(--text); }\n.icon-btn {\n  width: 36px; height: 36px; border-radius: 10px;\n  display: grid; place-items: center;\n  border: 1px solid var(--border); background: var(--surface-2);\n  transition: border-color 0.2s, transform 0.15s;\n}\n.icon-btn:hover { border-color: var(--brand); transform: translateY(-1px); }\n\n/* ============ Hero ============ */\n.hero { padding: 46px 0 18px; text-align: center; }\n.hero h1 {\n  margin: 0 0 8px;\n  font-size: clamp(26px, 5.2vw, 42px);\n  line-height: 1.25;\n  letter-spacing: -0.5px;\n}\n.hero h1 em {\n  font-style: normal;\n  background: linear-gradient(100deg, var(--brand), var(--brand-2) 45%, var(--brand-3));\n  -webkit-background-clip: text;\n  background-clip: text;\n  color: transparent;\n}\n.hero p { margin: 0 auto 26px; max-width: 640px; color: var(--text-dim); font-size: 15px; }\n\n.searchbox { position: relative; max-width: 720px; margin: 0 auto; }\n.searchbox .field {\n  display: flex; align-items: center; gap: 10px;\n  padding: 6px 6px 6px 16px;\n  border-radius: 999px;\n  border: 1px solid var(--border-strong);\n  background: var(--surface-2);\n  box-shadow: var(--shadow);\n  transition: border-color 0.2s, box-shadow 0.2s;\n}\n.searchbox .field:focus-within {\n  border-color: var(--brand);\n  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18), var(--shadow);\n}\n.searchbox .field svg { flex: none; opacity: 0.6; }\n.searchbox input {\n  flex: 1; min-width: 0;\n  border: none; background: transparent; outline: none;\n  height: 42px; font-size: 16px;\n}\n.searchbox input::placeholder { color: var(--text-mute); }\n.searchbox .clear {\n  flex: none; width: 28px; height: 28px; border-radius: 50%;\n  border: none; background: var(--surface); color: var(--text-dim);\n  display: none; place-items: center;\n}\n.searchbox.has-value .clear { display: grid; }\n\n.suggest {\n  position: absolute; left: 0; right: 0; top: calc(100% + 8px);\n  background: var(--bg-2);\n  border: 1px solid var(--border-strong);\n  border-radius: var(--radius);\n  box-shadow: var(--shadow);\n  overflow: hidden;\n  text-align: left;\n  z-index: 40;\n  display: none;\n  max-height: 340px; overflow-y: auto;\n}\n.suggest.show { display: block; }\n.suggest .grp { padding: 10px 14px 4px; font-size: 11.5px; color: var(--text-mute); letter-spacing: 1px; }\n.suggest .item {\n  display: flex; align-items: center; gap: 10px;\n  padding: 9px 14px; cursor: pointer; font-size: 14px;\n}\n.suggest .item:hover, .suggest .item.active { background: var(--surface-2); }\n.suggest .item .val { font-family: var(--mono); }\n.suggest .item .meta { margin-left: auto; font-size: 12px; color: var(--text-mute); }\n.suggest .empty { padding: 16px; text-align: center; color: var(--text-mute); font-size: 13px; }\n\n/* 筛选 */\n.filters { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }\n.chip-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }\n.chip {\n  display: inline-flex; align-items: center; gap: 7px;\n  padding: 6px 14px; border-radius: 999px; font-size: 13.5px;\n  border: 1px solid var(--border); background: var(--surface);\n  color: var(--text-dim);\n  transition: all 0.18s;\n}\n.chip:hover { border-color: var(--border-strong); color: var(--text); transform: translateY(-1px); }\n.chip.on {\n  color: #fff; border-color: transparent;\n  background: linear-gradient(120deg, var(--brand), var(--brand-2));\n  box-shadow: 0 6px 16px rgba(124, 92, 255, 0.3);\n}\n.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }\n.chip .pico {\n  width: 18px; height: 18px; border-radius: 6px;\n  display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff;\n}\n.chip .cnt { font-size: 11.5px; opacity: 0.75; }\n\n/* ============ 统计条 ============ */\n.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0 8px; }\n.stat {\n  padding: 14px 16px; border-radius: var(--radius-sm);\n  background: var(--surface); border: 1px solid var(--border);\n}\n.stat b { display: block; font-size: 22px; line-height: 1.2; letter-spacing: -0.5px; }\n.stat span { font-size: 12.5px; color: var(--text-mute); }\n\n/* ============ 结果 ============ */\n.section-head {\n  display: flex; align-items: baseline; gap: 10px; margin: 30px 0 14px;\n}\n.section-head h2 { margin: 0; font-size: 17px; }\n.section-head .n { color: var(--text-mute); font-size: 13px; }\n\n.people-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));\n  gap: 16px;\n}\n\n.person {\n  padding: 18px;\n  border-radius: var(--radius);\n  background: var(--surface);\n  border: 1px solid var(--border);\n  backdrop-filter: blur(12px);\n  -webkit-backdrop-filter: blur(12px);\n  transition: transform 0.18s, border-color 0.2s, box-shadow 0.2s;\n  overflow: hidden;\n}\n.person:hover {\n  transform: translateY(-3px);\n  border-color: var(--border-strong);\n  box-shadow: var(--shadow);\n}\n.person .head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }\n.avatar {\n  width: 42px; height: 42px; border-radius: 13px; flex: none;\n  display: grid; place-items: center;\n  font-weight: 700; font-size: 17px; color: #fff;\n  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);\n}\n.person .name { font-size: 16.5px; font-weight: 650; line-height: 1.3; }\n.person .sub { font-size: 12.5px; color: var(--text-mute); display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }\n.person .copy-all { margin-left: auto; flex: none; }\n\n.plat { margin-bottom: 12px; }\n.plat:last-child { margin-bottom: 0; }\n.plat .label {\n  display: flex; align-items: center; gap: 8px; margin-bottom: 7px;\n  font-size: 12.5px; color: var(--text-dim);\n}\n.plat .pico {\n  width: 20px; height: 20px; border-radius: 7px;\n  display: grid; place-items: center; font-size: 10.5px; font-weight: 700; color: #fff;\n}\n.plat .label .cnt { color: var(--text-mute); }\n.chips { display: flex; flex-wrap: wrap; gap: 7px; }\n\n.code {\n  position: relative;\n  display: inline-flex; align-items: center; gap: 6px;\n  padding: 5px 11px; border-radius: 9px;\n  font-family: var(--mono); font-size: 13.5px; letter-spacing: 0.3px;\n  background: var(--surface-2);\n  border: 1px solid var(--border);\n  transition: all 0.15s;\n  cursor: pointer;\n}\n.code:hover {\n  border-color: var(--brand);\n  background: rgba(124, 92, 255, 0.16);\n  transform: translateY(-1px);\n}\n.code.hit {\n  border-color: var(--warn);\n  background: rgba(255, 176, 32, 0.18);\n  box-shadow: 0 0 0 2px rgba(255, 176, 32, 0.18);\n}\n.code.link { font-family: inherit; }\n.code .kt { font-size: 10.5px; opacity: 0.7; font-family: inherit; }\n.code .go {\n  display: inline-grid; place-items: center;\n  width: 16px; height: 16px; opacity: 0.55;\n}\n.code .go:hover { opacity: 1; }\n\n/* 暗号结果行 */\n.entry-list { display: flex; flex-direction: column; gap: 10px; }\n.entry {\n  display: flex; align-items: center; gap: 12px;\n  padding: 12px 16px;\n  border-radius: var(--radius-sm);\n  background: var(--surface);\n  border: 1px solid var(--border);\n  transition: border-color 0.2s, background 0.2s, transform 0.15s;\n}\n.entry:hover { border-color: var(--border-strong); transform: translateX(2px); }\n.entry .val {\n  font-family: var(--mono); font-size: 16px; font-weight: 600; letter-spacing: 0.5px;\n  min-width: 108px;\n}\n.entry .who { font-size: 14px; }\n.entry .who b { font-weight: 600; cursor: pointer; }\n.entry .who b:hover { color: var(--brand-2); text-decoration: underline; }\n.entry .right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }\n.entry .url { font-size: 12px; color: var(--text-mute); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n\n.empty {\n  padding: 60px 20px; text-align: center; color: var(--text-mute);\n}\n.empty .big { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }\n\n.loading { text-align: center; padding: 40px; color: var(--text-mute); }\n.spinner {\n  width: 26px; height: 26px; margin: 0 auto 10px;\n  border: 3px solid var(--border-strong); border-top-color: var(--brand);\n  border-radius: 50%; animation: spin 0.8s linear infinite;\n}\n@keyframes spin { to { transform: rotate(360deg); } }\n\nfooter.foot {\n  margin-top: 60px; padding: 26px 0 40px;\n  border-top: 1px solid var(--border);\n  color: var(--text-mute); font-size: 13px; text-align: center;\n}\n\n/* Toast */\n#toast {\n  position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);\n  z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center;\n  pointer-events: none;\n}\n.toast-item {\n  padding: 10px 18px; border-radius: 999px;\n  background: var(--bg-2); border: 1px solid var(--border-strong);\n  box-shadow: var(--shadow); font-size: 14px;\n  animation: pop 0.22s ease-out;\n}\n.toast-item.ok { border-color: rgba(40, 199, 111, 0.6); }\n.toast-item.err { border-color: rgba(255, 77, 109, 0.6); }\n@keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }\n\n/* ============ 后台 ============ */\n.admin-body { background: var(--bg-2); }\n.login-page { min-height: 100vh; display: grid; place-items: center; padding: 20px; }\n.login-card { width: min(400px, 100%); padding: 34px 30px; }\n.login-card h2 { margin: 0 0 6px; font-size: 22px; }\n.login-card .row { margin-top: 16px; }\n.login-card label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }\n.login-card .btn { width: 100%; margin-top: 20px; padding: 12px; }\n.login-card .hint { margin-top: 16px; font-size: 12.5px; color: var(--text-mute); text-align: center; }\n\n.admin-head {\n  position: sticky; top: 0; z-index: 40;\n  background: color-mix(in srgb, var(--bg-2) 85%, transparent);\n  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);\n  border-bottom: 1px solid var(--border);\n}\n.admin-head .wrap { display: flex; align-items: center; gap: 12px; height: 58px; flex-wrap: wrap; }\n\n.tabs { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); overflow-x: auto; }\n.tabs button {\n  border: none; background: transparent; color: var(--text-dim);\n  padding: 7px 16px; border-radius: 999px; font-size: 14px; white-space: nowrap;\n  transition: all 0.18s;\n}\n.tabs button.on { background: linear-gradient(120deg, var(--brand), var(--brand-2)); color: #fff; font-weight: 600; }\n\n.panel { display: none; padding: 22px 0 40px; }\n.panel.on { display: block; }\n\n.toolbar {\n  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px;\n}\n.toolbar .input, .toolbar .select { width: auto; min-width: 150px; flex: 0 1 auto; }\n.toolbar .grow { flex: 1 1 200px; }\n.spacer { flex: 1; }\n\n.table-card { border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); overflow: hidden; }\n.tbl-scroll { overflow-x: auto; }\ntable.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }\ntable.tbl th {\n  text-align: left; padding: 12px 14px; font-size: 12.5px; color: var(--text-mute);\n  font-weight: 600; border-bottom: 1px solid var(--border); background: var(--surface-2);\n  position: sticky; top: 0;\n}\ntable.tbl td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }\ntable.tbl tr:last-child td { border-bottom: none; }\ntable.tbl tbody tr:hover { background: var(--surface-2); }\ntable.tbl .mono { font-family: var(--mono); }\ntable.tbl .ops { display: flex; gap: 6px; }\n.table-foot { padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-mute); border-top: 1px solid var(--border); background: var(--surface-2); }\n\n/* 弹窗 */\n.modal-mask {\n  position: fixed; inset: 0; z-index: 100;\n  background: rgba(5, 7, 12, 0.62);\n  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);\n  display: none; align-items: center; justify-content: center; padding: 18px;\n  overflow-y: auto;\n}\n.modal-mask.on { display: flex; }\n.modal {\n  width: min(560px, 100%);\n  background: var(--bg-2);\n  border: 1px solid var(--border-strong);\n  border-radius: var(--radius);\n  box-shadow: var(--shadow);\n  animation: pop 0.2s ease-out;\n  max-height: calc(100vh - 40px);\n  display: flex; flex-direction: column;\n}\n.modal header {\n  display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border);\n}\n.modal header h3 { margin: 0; font-size: 16px; }\n.modal header .x { margin-left: auto; border: none; background: transparent; color: var(--text-dim); font-size: 20px; line-height: 1; }\n.modal .body { padding: 18px 20px; overflow-y: auto; }\n.modal footer { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border); }\n.form-row { margin-bottom: 14px; }\n.form-row label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }\n.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }\n.err-text { color: var(--danger); font-size: 13px; min-height: 18px; }\n\n.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }\n.kv .box { padding: 16px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }\n.kv .box b { display: block; font-size: 24px; }\n.kv .box span { font-size: 12.5px; color: var(--text-mute); }\n\n.plat-editor { display: grid; gap: 10px; }\n.plat-editor .row {\n  display: grid; grid-template-columns: 1fr 1fr 90px 90px auto; gap: 8px; align-items: center;\n}\n\n/* ============ 速览：平台矩阵 ============ */\n.discover { animation: fadeUp 0.5s ease both; }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }\n\n.matrix { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 14px; }\n.mx {\n  position: relative;\n  padding: 18px;\n  border-radius: 18px;\n  border: 1px solid var(--border);\n  background: var(--surface);\n  cursor: pointer;\n  overflow: hidden;\n  isolation: isolate;\n  transition: transform 0.25s cubic-bezier(.2,.7,.3,1.2), border-color 0.25s, box-shadow 0.25s;\n}\n.mx::before {\n  content: \"\";\n  position: absolute;\n  inset: -50%;\n  z-index: -1;\n  background: radial-gradient(circle at 35% 30%, var(--pc), transparent 58%);\n  opacity: 0.22;\n  animation: mxGlow 5.5s ease-in-out infinite;\n}\n@keyframes mxGlow {\n  0%, 100% { transform: translate(-6%, -6%) scale(1); opacity: 0.18; }\n  50%      { transform: translate(8%, 10%) scale(1.16); opacity: 0.34; }\n}\n.mx::after {\n  content: \"\";\n  position: absolute;\n  inset: -1px;\n  border-radius: 19px;\n  padding: 1px;\n  background: conic-gradient(from 0deg, transparent 0 22%, var(--pc) 42%, transparent 62% 100%);\n  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);\n  -webkit-mask-composite: xor;\n  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);\n  mask-composite: exclude;\n  opacity: 0;\n  animation: spinSlow 5s linear infinite;\n  transition: opacity 0.3s;\n}\n.mx:hover::after, .mx.on::after { opacity: 0.95; }\n.mx:hover { transform: translateY(-4px); border-color: transparent; box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28); }\n.mx.on { border-color: transparent; }\n@keyframes spinSlow { to { transform: rotate(360deg); } }\n\n.mx .top { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }\n.mx .ico {\n  width: 30px; height: 30px; border-radius: 10px; flex: none;\n  display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #fff;\n  background: var(--pc);\n  box-shadow: 0 4px 14px color-mix(in srgb, var(--pc) 45%, transparent);\n}\n.mx .nm { font-size: 14.5px; font-weight: 600; }\n.mx .nums { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }\n.mx .nums small { font-size: 12px; font-weight: 400; color: var(--text-mute); margin-left: 4px; letter-spacing: 0; }\n.mx .bar { margin-top: 10px; height: 5px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }\n.mx .bar i { display: block; height: 100%; border-radius: 6px; background: var(--pc); width: 0; transition: width 1.2s cubic-bezier(.2,.7,.3,1); }\n\n/* ============ 速览：滚动带 ============ */\n.marquee {\n  margin-top: 22px;\n  overflow: hidden;\n  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);\n  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);\n}\n.marquee .track { display: flex; gap: 10px; width: max-content; animation: scrollX 38s linear infinite; }\n.marquee:hover .track { animation-play-state: paused; }\n@keyframes scrollX { to { transform: translateX(-50%); } }\n.mq-item {\n  display: inline-flex; align-items: center; gap: 8px;\n  padding: 7px 14px; border-radius: 999px;\n  border: 1px solid var(--border); background: var(--surface);\n  font-size: 13px; white-space: nowrap;\n}\n.mq-item .d { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); box-shadow: 0 0 8px var(--pc); }\n.mq-item .v { font-family: var(--mono); letter-spacing: 0.5px; }\n.mq-item .p { color: var(--text-mute); font-size: 12px; }\n\n/* ============ 速览：随机聚焦卡 ============ */\n.spot {\n  position: relative;\n  margin-top: 22px;\n  padding: 28px;\n  border-radius: 22px;\n  border: 1px solid var(--border);\n  background: var(--surface);\n  overflow: hidden;\n  isolation: isolate;\n}\n.spot::before {\n  content: \"\";\n  position: absolute;\n  inset: -80%;\n  z-index: -1;\n  background: conic-gradient(from 0deg, transparent 0 26%, var(--brand) 40%, var(--brand-2) 52%, var(--brand-3) 62%, transparent 76%);\n  filter: blur(38px);\n  opacity: 0.28;\n  animation: spinSlow 14s linear infinite;\n}\n.spot-in { position: relative; }\n.spot-label { font-size: 12px; letter-spacing: 2px; color: var(--text-mute); text-transform: uppercase; }\n.spot-body { margin-top: 14px; min-height: 118px; }\n.spot-item { animation: spotIn 0.55s cubic-bezier(.2,.7,.3,1.1) both; }\n@keyframes spotIn { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }\n.spot-item.out { animation: spotOut 0.3s ease both; }\n@keyframes spotOut { to { opacity: 0; transform: translateY(-10px) scale(0.99); } }\n.spot-plat { display: flex; align-items: center; gap: 8px; }\n.spot-plat .ico {\n  width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center;\n  font-size: 11px; font-weight: 800; color: #fff; background: var(--pc);\n}\n.spot-code {\n  margin-top: 12px;\n  font-family: var(--mono);\n  font-size: clamp(28px, 6.4vw, 44px);\n  font-weight: 700;\n  letter-spacing: 2px;\n  line-height: 1.15;\n  word-break: break-all;\n}\n.spot-who { margin-top: 8px; font-size: 13.5px; color: var(--text-dim); }\n.spot-foot { margin-top: 16px; display: flex; align-items: center; gap: 12px; }\n.spot-dots { display: flex; gap: 6px; }\n.spot-dots b {\n  width: 22px; height: 4px; border-radius: 3px; background: var(--border-strong);\n  transition: background 0.3s, width 0.3s;\n}\n.spot-dots b.on { background: linear-gradient(90deg, var(--brand), var(--brand-2)); width: 30px; }\n.spot-foot .spacer { flex: 1; }\n\n/* ============ 速览：脱敏预览墙 ============ */\n.preview { margin-top: 22px; }\n.pv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 12px; }\n.pv {\n  padding: 14px;\n  border-radius: 14px;\n  border: 1px solid var(--border);\n  background: var(--surface);\n  animation: pvIn 0.45s cubic-bezier(.2,.7,.3,1.1) both;\n  transition: transform 0.2s, border-color 0.2s;\n  overflow: hidden;\n  position: relative;\n}\n.pv:hover { transform: translateY(-3px); border-color: var(--pc); }\n@keyframes pvIn { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }\n.pv .t { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); }\n.pv .t .d { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }\n.pv .v { margin-top: 8px; font-family: var(--mono); font-size: 15px; letter-spacing: 0.6px; word-break: break-all; }\n.pv .w { margin-top: 4px; font-size: 11.5px; color: var(--text-mute); }\n\n.sec-head { display: flex; align-items: baseline; gap: 10px; margin: 30px 0 14px; }\n.sec-head h2 { margin: 0; font-size: 17px; }\n.sec-head .n { color: var(--text-mute); font-size: 13px; }\n.sec-head .spacer { flex: 1; }\n\n.tip-bar {\n  margin-top: 22px; padding: 14px 18px; border-radius: 14px;\n  border: 1px dashed var(--border-strong); background: var(--surface);\n  font-size: 13.5px; color: var(--text-dim);\n}\n.tip-bar b { color: var(--text); }\n\n@media (prefers-reduced-motion: reduce) {\n  .discover, .spot-item, .pv, .marquee .track, .mx::before, .mx::after, .spot::before { animation: none !important; }\n}\n\n/* ============ 响应式 ============ */\n@media (max-width: 900px) {\n  .stats { grid-template-columns: repeat(2, 1fr); }\n}\n@media (max-width: 640px) {\n  .wrap { padding: 0 14px; }\n  .hero { padding: 30px 0 10px; }\n  .hero p { font-size: 14px; margin-bottom: 18px; }\n  .topbar .wrap { height: 54px; gap: 8px; }\n  .brand span { font-size: 15px; }\n  .topbar nav a { padding: 5px 9px; font-size: 13px; }\n  .people-grid { grid-template-columns: 1fr; }\n  .matrix { grid-template-columns: repeat(2, 1fr); gap: 10px; }\n  .mx { padding: 14px; }\n  .mx .nums { font-size: 22px; }\n  .mx .ico { width: 26px; height: 26px; }\n  .pv-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }\n  .spot { padding: 20px; }\n  .fb-card { grid-template-columns: 1fr; gap: 18px; padding: 18px; }\n  .fb-fab { right: 14px; bottom: 16px; width: 46px; height: 46px; }\n  .entry { flex-wrap: wrap; gap: 8px; }\n  .entry .val { min-width: 0; }\n  .entry .right { margin-left: 0; width: 100%; justify-content: flex-start; }\n  .entry .url { max-width: 100%; }\n  .stat b { font-size: 19px; }\n  .form-grid { grid-template-columns: 1fr; }\n  .plat-editor .row { grid-template-columns: 1fr 1fr; }\n  .toolbar .input, .toolbar .select { min-width: 0; flex: 1 1 140px; }\n  .modal { width: 100%; }\n  .searchbox input { font-size: 15px; }\n}\n@media (max-width: 380px) {\n  .chip { padding: 5px 11px; font-size: 12.5px; }\n}\n", "shim": "/**\n * 静态版数据垫片（GitHub Pages / 纯静态托管时使用）\n *\n * 在根目录 index.html 中，本文件会在 app.js 之前执行：\n * 它把 window.__DATA__ 作为数据源，拦截 /api/* 的 fetch 请求，\n * 让原本依赖服务端的 app.js 无需任何改动即可离线运行。\n */\n(function () {\n  'use strict';\n\n  var DATA = window.__DATA__ || {};\n\n  // 若本机有后台草稿（未导出），优先展示草稿，让本机看到自己的改动\n  try {\n    var _d = localStorage.getItem('ch_admin_draft');\n    if (_d) {\n      var _dd = JSON.parse(_d);\n      if (_dd && _dd.db) DATA = _dd.db;\n    }\n  } catch (e) {}\n\n  var PLATFORMS = DATA.platforms || [];\n  var PEOPLE = DATA.people || [];\n  var ENTRIES = DATA.entries || [];\n  var GROUPS = DATA.groups || [];\n  var SETTINGS = DATA.settings || {};\n\n  var PM = {}, PEM = {};\n  PLATFORMS.forEach(function (p) { PM[p.id] = p; });\n  PEOPLE.forEach(function (p) { PEM[p.id] = p; });\n\n  /** 后台改动后同步给前台，使本页立即生效 */\n  window.__CH_SET_DATA__ = function (d) {\n    DATA = d || {};\n    PLATFORMS = DATA.platforms || [];\n    PEOPLE = DATA.people || [];\n    ENTRIES = DATA.entries || [];\n    GROUPS = DATA.groups || [];\n    SETTINGS = DATA.settings || {};\n    PM = {}; PEM = {};\n    PLATFORMS.forEach(function (p) { PM[p.id] = p; });\n    PEOPLE.forEach(function (p) { PEM[p.id] = p; });\n  };\n\n  function fixAsset(u) {\n    return String(u || '').replace(/^\\/?assets\\//, 'assets/');\n  }\n\n  function maskName(n) {\n    var s = String(n || '');\n    if (!s) return '—';\n    if (s.length <= 1) return s + '*';\n    return s[0] + new Array(s.length).join('*');\n  }\n\n  function maskValue(v, kind) {\n    var s = String(v || '');\n    if (!s) return '';\n    if (kind === 'link') {\n      var seg = s.split('-');\n      if (seg.length >= 3) return seg[0] + '-•••-' + seg[seg.length - 1];\n      if (seg.length === 2) return seg[0] + '-•••';\n      return s.slice(0, 3) + '•••';\n    }\n    if (s.length <= 3) return s[0] + new Array(Math.max(s.length, 2)).join('•');\n    var head = s.slice(0, 2), tail = s.slice(-1);\n    var mid = Math.min(s.length - 3, 4);\n    return head + new Array(mid + 1).join('•') + tail;\n  }\n\n  function decorate(e) {\n    var out = {}, k;\n    for (k in e) if (Object.prototype.hasOwnProperty.call(e, k)) out[k] = e[k];\n    out.platform = PM[e.platformId] || null;\n    out.person = PEM[e.personId] || null;\n    return out;\n  }\n\n  function byName(a, b) {\n    return String(a.name).localeCompare(String(b.name), 'zh');\n  }\n\n  function withEntries(person, platform, kind) {\n    var list = ENTRIES.filter(function (e) {\n      if (e.personId !== person.id) return false;\n      if (platform && e.platformId !== platform) return false;\n      if (kind && e.kind !== kind) return false;\n      return true;\n    });\n    list.sort(function (a, b) {\n      var pa = PM[a.platformId], pb = PM[b.platformId];\n      var oa = pa ? (pa.order || 99) : 99, ob = pb ? (pb.order || 99) : 99;\n      if (oa !== ob) return oa - ob;\n      return String(a.value).localeCompare(String(b.value));\n    });\n    return {\n      id: person.id,\n      name: person.name,\n      group: person.group,\n      note: person.note,\n      entries: list.map(decorate),\n    };\n  }\n\n  function stats() {\n    var counts = {}, byP = {};\n    PLATFORMS.forEach(function (p) { counts[p.id] = 0; });\n    ENTRIES.forEach(function (e) {\n      if (counts[e.platformId] === undefined) counts[e.platformId] = 0;\n      counts[e.platformId]++;\n    });\n    var fbs = [];\n    try { fbs = JSON.parse(localStorage.getItem('ch_feedbacks') || '[]'); } catch (x) { fbs = []; }\n    return {\n      people: PEOPLE.length,\n      entries: ENTRIES.length,\n      platforms: PLATFORMS.length,\n      byPlatform: counts,\n      feedbackTotal: fbs.length,\n      feedbackNew: fbs.filter(function (f) { return f.status !== 'done'; }).length,\n      updatedAt: SETTINGS.updatedAt || '',\n    };\n  }\n\n  function search(opt) {\n    var q = String(opt.q || '').trim().toLowerCase();\n    var platform = opt.platform || '', group = opt.group || '';\n    var peopleLimit = opt.peopleLimit || 50, entryLimit = opt.entryLimit || 300;\n    var res = { people: [], entries: [], peopleTotal: 0, entriesTotal: 0 };\n\n    var groupOk = function (p) { return !group || (p && String(p.group || '').indexOf(group) >= 0); };\n\n    if (!q) {\n      var all = PEOPLE.filter(groupOk).sort(byName);\n      res.peopleTotal = all.length;\n      res.people = all.slice(0, peopleLimit).map(function (p) { return withEntries(p); });\n      return res;\n    }\n\n    var nameHits = PEOPLE.filter(function (p) {\n      return String(p.name || '').toLowerCase().indexOf(q) >= 0 && groupOk(p);\n    });\n    nameHits.sort(function (a, b) {\n      var ae = String(a.name).toLowerCase() === q ? 0 : String(a.name).toLowerCase().indexOf(q);\n      var be = String(b.name).toLowerCase() === q ? 0 : String(b.name).toLowerCase().indexOf(q);\n      if (ae !== be) return ae - be;\n      return byName(a, b);\n    });\n\n    var ehits = ENTRIES.filter(function (e) {\n      if (platform && e.platformId !== platform) return false;\n      if (String(e.value || '').toLowerCase().indexOf(q) < 0) return false;\n      if (group) { var p = PEM[e.personId]; if (!groupOk(p)) return false; }\n      return true;\n    });\n    ehits.sort(function (a, b) {\n      var av = String(a.value || '').toLowerCase(), bv = String(b.value || '').toLowerCase();\n      var ax = av === q ? 0 : 1, bx = bv === q ? 0 : 1;\n      if (ax !== bx) return ax - bx;\n      if (av.length !== bv.length) return av.length - bv.length;\n      return av.localeCompare(bv);\n    });\n\n    var ids = {};\n    nameHits.forEach(function (p) { ids[p.id] = 1; });\n    ehits.forEach(function (e) { if (e.personId) ids[e.personId] = 1; });\n    var allPeople = PEOPLE.filter(function (p) { return ids[p.id]; });\n\n    res.peopleTotal = allPeople.length;\n    res.entriesTotal = ehits.length;\n    res.people = allPeople.slice(0, peopleLimit).map(function (p) { return withEntries(p, platform, ''); });\n    res.entries = ehits.slice(0, entryLimit).map(decorate);\n    res.matchedPeople = nameHits.length;\n    return res;\n  }\n\n  function suggest(q, limit) {\n    var key = String(q || '').trim().toLowerCase();\n    var n = limit || 8, people = [], codes = [], seen = {};\n    if (!key) return { people: people, codes: codes };\n    PEOPLE.forEach(function (p) {\n      if (people.length >= n) return;\n      if (String(p.name).toLowerCase().indexOf(key) >= 0) {\n        people.push({ id: p.id, name: p.name, group: p.group });\n      }\n    });\n    ENTRIES.forEach(function (e) {\n      if (codes.length >= n) return;\n      var v = String(e.value || '').toLowerCase();\n      if (v.indexOf(key) >= 0 && !seen[e.value]) {\n        seen[e.value] = 1;\n        codes.push({ value: e.value, kind: e.kind, platform: PM[e.platformId] ? PM[e.platformId].name : '' });\n      }\n    });\n    return { people: people, codes: codes };\n  }\n\n  function samples(opt) {\n    opt = opt || {};\n    var n = Math.min(Math.max(Number(opt.n) || 14, 1), 60);\n    var pool = ENTRIES.slice();\n    if (opt.platform) pool = pool.filter(function (e) { return e.platformId === opt.platform; });\n    if (opt.group) {\n      pool = pool.filter(function (e) {\n        var p = PEM[e.personId];\n        return p && String(p.group || '').indexOf(opt.group) >= 0;\n      });\n    }\n    for (var i = pool.length - 1; i > 0; i--) {\n      var j = Math.floor(Math.random() * (i + 1));\n      var t = pool[i]; pool[i] = pool[j]; pool[j] = t;\n    }\n    var items = pool.slice(0, n).map(function (e) {\n      var p = PM[e.platformId] || {}, per = PEM[e.personId];\n      return {\n        platformId: e.platformId,\n        platformName: p.name || e.platformId,\n        color: p.color || '#7c5cff',\n        kind: e.kind,\n        type: e.type || '',\n        maskedValue: maskValue(e.value, e.kind),\n        maskedName: per ? maskName(per.name) : '—',\n        group: per ? (per.group || '') : '',\n      };\n    });\n    var codes = [], links = [], seen = {};\n    pool.forEach(function (e) {\n      if (seen[e.value]) return;\n      if (e.kind === 'code' && codes.length < 6) { seen[e.value] = 1; codes.push(e.value); }\n      else if (e.kind === 'link' && links.length < 3) { seen[e.value] = 1; links.push(e.value); }\n    });\n    return { items: items, codes: codes, links: links, groups: GROUPS.slice(), total: pool.length };\n  }\n\n  function bootstrap() {\n    return {\n      settings: {\n        siteName: SETTINGS.siteName || '暗号查询中心',\n        subtitle: SETTINGS.subtitle || '',\n        logos: (SETTINGS.logos || []).map(fixAsset),\n        feedback: SETTINGS.feedback || { title: '问题反馈', desc: '', enableForm: true },\n        contacts: SETTINGS.contacts || [],\n      },\n      platforms: PLATFORMS.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); }),\n      groups: GROUPS.slice(),\n      stats: stats(),\n    };\n  }\n\n  function parseQuery(url) {\n    var i = url.indexOf('?');\n    var out = {};\n    if (i < 0) return out;\n    url.slice(i + 1).split('&').forEach(function (kv) {\n      if (!kv) return;\n      var p = kv.split('=');\n      out[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || '').replace(/\\+/g, ' '));\n    });\n    return out;\n  }\n\n  function respond(data) {\n    return Promise.resolve({\n      ok: true,\n      status: 200,\n      headers: { get: function () { return null; } },\n      json: function () { return Promise.resolve(JSON.parse(JSON.stringify(data))); },\n      text: function () { return Promise.resolve(JSON.stringify(data)); },\n    });\n  }\n\n  window.__STATIC_MODE__ = true;\n\n  var origFetch = window.fetch ? window.fetch.bind(window) : null;\n  window.fetch = function (url, opt) {\n    url = String(url || '');\n    var m = url.match(/(?:^|\\/)api\\/([^?]*)/);\n    if (!m) {\n      if (origFetch) return origFetch(url, opt);\n      return Promise.reject(new Error('no fetch'));\n    }\n    var name = m[1];\n    var qs = parseQuery(url);\n\n    if (name === 'bootstrap') return respond(bootstrap());\n    if (name === 'stats') return respond(stats());\n    if (name === 'search') {\n      return respond(search({\n        q: qs.q || '',\n        platform: qs.platform || '',\n        group: qs.group || '',\n        peopleLimit: Number(qs.peopleLimit || 50),\n        entryLimit: Number(qs.entryLimit || 300),\n      }));\n    }\n    if (name === 'suggest') return respond(suggest(qs.q || '', 8));\n    if (name === 'samples') {\n      return respond(samples({ platform: qs.platform || '', group: qs.group || '', n: Number(qs.n || 14) }));\n    }\n    if (name === 'feedback') {\n      var body = {};\n      try { body = JSON.parse((opt && opt.body) || '{}'); } catch (e) { body = {}; }\n      if (!String(body.message || '').trim()) {\n        return Promise.resolve({\n          ok: false, status: 400,\n          json: function () { return Promise.resolve({ error: '请填写反馈内容' }); },\n        });\n      }\n      var list = [];\n      try { list = JSON.parse(localStorage.getItem('ch_feedbacks') || '[]'); } catch (e) { list = []; }\n      list.unshift({\n        id: Date.now(),\n        name: body.name || '',\n        contact: body.contact || '',\n        message: String(body.message).slice(0, 1000),\n        status: 'new',\n        createdAt: new Date().toISOString(),\n      });\n      try { localStorage.setItem('ch_feedbacks', JSON.stringify(list.slice(0, 200))); } catch (e) {}\n      return respond({ ok: true, local: true });\n    }\n    return Promise.resolve({\n      ok: false, status: 404,\n      json: function () { return Promise.resolve({ error: '静态版不支持该接口' }); },\n    });\n  };\n})();\n", "app": "/* 暗号查询中心 —— 前台逻辑 */\n(function () {\n  'use strict';\n\n  var state = {\n    q: '',\n    platform: '',\n    group: '',\n    boot: null,\n    limit: 30,\n    entryLimit: 300,\n    loading: false,\n    samples: null,\n    spotIdx: 0,\n    spotTimer: null,\n    phTimer: null,\n    phType: null,\n    phIdx: 0,\n    phCands: [],\n  };\n\n  var $ = function (s) { return document.querySelector(s); };\n\n  /* ---------- 工具 ---------- */\n  function esc(s) {\n    return String(s == null ? '' : s)\n      .replace(/&/g, '&amp;').replace(/<\/g, '&lt;').replace(/>/g, '&gt;')\n      .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');\n  }\n\n  function highlight(text, q) {\n    var t = esc(text);\n    if (!q) return t;\n    var k = q.trim();\n    if (!k) return t;\n    var lower = String(text).toLowerCase();\n    var idx = lower.indexOf(k.toLowerCase());\n    if (idx < 0) return t;\n    var raw = String(text);\n    return esc(raw.slice(0, idx)) + '<mark>' + esc(raw.slice(idx, idx + k.length)) + '<\/mark>' + esc(raw.slice(idx + k.length));\n  }\n\n  function avatarColor(name) {\n    var h = 0;\n    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;\n    return 'linear-gradient(135deg, hsl(' + h + ',68%,58%), hsl(' + ((h + 42) % 360) + ',70%,48%))';\n  }\n\n  function pico(name) {\n    var map = { Threads: 'Th', Instagram: 'In', TikTok: 'TT', X: 'X', Facebook: 'F' };\n    if (map[name]) return map[name];\n    return String(name || '').slice(0, 1);\n  }\n\n  function toast(msg, type) {\n    var box = $('#toast');\n    var el = document.createElement('div');\n    el.className = 'toast-item ' + (type || '');\n    el.textContent = msg;\n    box.appendChild(el);\n    setTimeout(function () {\n      el.style.transition = 'opacity .25s, transform .25s';\n      el.style.opacity = '0';\n      el.style.transform = 'translateY(8px)';\n      setTimeout(function () { el.remove(); }, 260);\n    }, 1600);\n  }\n\n  function copy(text) {\n    if (navigator.clipboard && window.isSecureContext) {\n      navigator.clipboard.writeText(text).then(function () { toast('已复制：' + text, 'ok'); },\n        function () { fallbackCopy(text); });\n    } else {\n      fallbackCopy(text);\n    }\n  }\n\n  function fallbackCopy(text) {\n    var ta = document.createElement('textarea');\n    ta.value = text;\n    ta.style.position = 'fixed';\n    ta.style.opacity = '0';\n    document.body.appendChild(ta);\n    ta.select();\n    try {\n      document.execCommand('copy');\n      toast('已复制：' + text, 'ok');\n    } catch (e) {\n      toast('复制失败，请手动选择', 'err');\n    }\n    ta.remove();\n  }\n\n  function debounce(fn, ms) {\n    var t;\n    return function () {\n      var args = arguments, self = this;\n      clearTimeout(t);\n      t = setTimeout(function () { fn.apply(self, args); }, ms);\n    };\n  }\n\n  function api(path) {\n    return fetch(path).then(function (r) {\n      if (!r.ok) throw new Error('HTTP ' + r.status);\n      return r.json();\n    });\n  }\n\n  function shuffle(a) {\n    for (var i = a.length - 1; i > 0; i--) {\n      var j = Math.floor(Math.random() * (i + 1));\n      var t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n    return a;\n  }\n\n  /* ---------- 背景动效 ---------- */\n  function initBackground() {\n    var box = document.getElementById('bgDots');\n    if (!box) return;\n    var colors = ['#7c5cff', '#3ea6ff', '#ff5c8a', '#00c8b4', '#ffb020'];\n    var n = window.innerWidth < 700 ? 12 : 20;\n    var html = '';\n    for (var i = 0; i < n; i++) {\n      var s = (2 + Math.random() * 4).toFixed(1);\n      var dur = (15 + Math.random() * 18).toFixed(1);\n      var delay = '-' + (Math.random() * 24).toFixed(1);\n      var dx = ((Math.random() * 90 - 45) | 0);\n      var left = (Math.random() * 100).toFixed(2);\n      html += '<i style=\"--s:' + s + 'px;--c:' + colors[i % colors.length] + ';left:' + left +\n        '%;animation-duration:' + dur + 's;animation-delay:' + delay + 's;--dx:' + dx + 'px\"><\/i>';\n    }\n    box.innerHTML = html;\n  }\n\n  /* ---------- 主题 ---------- */\n  function initTheme() {\n    var t = localStorage.getItem('ch_theme');\n    if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';\n    document.documentElement.setAttribute('data-theme', t);\n    $('#themeBtn').onclick = function () {\n      var cur = document.documentElement.getAttribute('data-theme');\n      var next = cur === 'dark' ? 'light' : 'dark';\n      document.documentElement.setAttribute('data-theme', next);\n      localStorage.setItem('ch_theme', next);\n    };\n  }\n\n  /* ---------- Logo 切换 ---------- */\n  function setupLogo(b) {\n    var logos = (b.settings && b.settings.logos) || [];\n    logos = logos.filter(Boolean);\n    var box = $('#logoBox');\n    var img = $('#brandLogo');\n    var btn = $('#logoBtn');\n    if (!logos.length) {\n      box.innerHTML = '#';\n      btn.style.display = 'none';\n      return;\n    }\n    var saved = parseInt(localStorage.getItem('ch_logo'), 10);\n    var idx = (isNaN(saved) || saved < 0 || saved >= logos.length)\n      ? Math.floor(Math.random() * logos.length)\n      : saved;\n\n    function paint(i) {\n      idx = ((i % logos.length) + logos.length) % logos.length;\n      img.style.animation = 'none';\n      img.onerror = function () {\n        img.style.display = 'none';\n        box.textContent = '#';\n      };\n      img.onload = function () {\n        img.style.display = 'block';\n        img.style.animation = '';\n      };\n      img.src = logos[idx];\n      if (img.complete && img.naturalWidth) {\n        img.style.display = 'block';\n        img.style.animation = '';\n      }\n      localStorage.setItem('ch_logo', String(idx));\n      btn.title = '切换 Logo (' + (idx + 1) + '/' + logos.length + ')';\n    }\n\n    paint(idx);\n    btn.onclick = function () {\n      paint(idx + 1);\n      toast('已切换 Logo', 'ok');\n    };\n    if (logos.length < 2) btn.style.display = 'none';\n  }\n\n  /* ---------- 问题反馈 ---------- */\n  function renderFeedback(b) {\n    var s = (b && b.settings) || {};\n    var fb = s.feedback || {};\n    var contacts = s.contacts || [];\n\n    $('#fbTitle').textContent = fb.title || '问题反馈';\n    $('#fbDesc').textContent = fb.desc || '';\n    $('#fbDesc').style.display = fb.desc ? '' : 'none';\n\n    var box = $('#fbContacts');\n    if (contacts.length) {\n      box.style.display = '';\n      $('#fbEmpty').style.display = 'none';\n      box.innerHTML = contacts.map(function (c) {\n        return '<div class=\"ct\">' +\n          '<span class=\"ty\">' + esc(c.type || '其他') + '<\/span>' +\n          '<span class=\"vl\">' + esc(c.value) + (c.label ? ' <span class=\"tiny muted\">· ' + esc(c.label) + '<\/span>' : '') + '<\/span>' +\n          '<button class=\"cp\" data-copy=\"' + esc(c.value) + '\" title=\"复制\">' +\n            '<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"9\" y=\"9\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M5 15V5a2 2 0 012-2h10\"/><\/svg>' +\n          '<\/button><\/div>';\n      }).join('');\n      box.querySelectorAll('[data-copy]').forEach(function (el) {\n        el.onclick = function () { copy(el.getAttribute('data-copy')); };\n      });\n    } else {\n      box.style.display = 'none';\n      $('#fbEmpty').style.display = '';\n    }\n\n    var form = $('#fbForm');\n    form.style.display = fb.enableForm === false ? 'none' : '';\n    var fab = $('#fbFab');\n    fab.style.display = fb.enableForm === false ? 'none' : '';\n    if (fb.enableForm === false) $('#fbSub').textContent = '管理员已关闭留言';\n    else $('#fbSub').textContent = '查不到、信息有误、需要新增 —— 都可以告诉我们';\n  }\n\n  function bindFeedback() {\n    $('#fbFab').onclick = function () {\n      document.getElementById('feedback').scrollIntoView({ behavior: 'smooth', block: 'start' });\n    };\n    $('#fbForm').addEventListener('submit', function (e) {\n      e.preventDefault();\n      var msg = $('#fbMsg').value.trim();\n      if (!msg) { toast('请填写反馈内容', 'err'); return; }\n      var btn = $('#fbSubmit');\n      btn.disabled = true;\n      btn.textContent = '提交中…';\n      fetch('/api/feedback', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          name: $('#fbName').value.trim(),\n          contact: $('#fbContact').value.trim(),\n          message: msg,\n        }),\n      }).then(function (r) {\n        return r.json().catch(function () { return {}; }).then(function (d) {\n          if (!r.ok) throw new Error(d.error || '提交失败');\n          return d;\n        });\n      }).then(function () {\n        $('#fbMsg').value = '';\n        toast('已提交，谢谢反馈！', 'ok');\n      }).catch(function (err) {\n        toast(err.message, 'err');\n      }).then(function () {\n        btn.disabled = false;\n        btn.textContent = '提交反馈';\n      });\n    });\n  }\n\n  /* ---------- 搜索框占位提示（每次打开都不一样 + 打字机轮播） ---------- */\n  function buildPlaceholders(s) {\n    var out = [];\n    (s.codes || []).forEach(function (c) { out.push('试着输入「' + c + '」'); });\n    (s.links || []).forEach(function (l) { out.push('试试搜短链「' + l + '」'); });\n    (s.groups || []).forEach(function (g) { out.push('也可以输入「' + g + '」'); });\n    out.push('输入姓名或暗号试试');\n    return shuffle(out);\n  }\n\n  function typePlaceholder(text) {\n    var input = $('#q');\n    clearInterval(state.phType);\n    var k = 0;\n    input.setAttribute('placeholder', '');\n    state.phType = setInterval(function () {\n      k++;\n      input.setAttribute('placeholder', text.slice(0, k));\n      if (k >= text.length) clearInterval(state.phType);\n    }, 55);\n  }\n\n  function startPlaceholder() {\n    var input = $('#q');\n    if (!state.phCands.length) return;\n    clearInterval(state.phTimer);\n    state.phIdx = Math.floor(Math.random() * state.phCands.length);\n    typePlaceholder(state.phCands[state.phIdx]);\n    state.phTimer = setInterval(function () {\n      if (input.value || document.activeElement === input) return;\n      state.phIdx++;\n      if (state.phIdx >= state.phCands.length) {\n        state.phIdx = 0;\n        shuffle(state.phCands);\n      }\n      typePlaceholder(state.phCands[state.phIdx]);\n    }, 5000);\n  }\n\n  function stopPlaceholder() {\n    clearInterval(state.phTimer);\n    clearInterval(state.phType);\n  }\n\n  /* ---------- 筛选 ---------- */\n  function renderFilters() {\n    var b = state.boot;\n    var s = b.stats.byPlatform || {};\n    var html = '<button class=\"chip' + (state.platform ? '' : ' on') + '\" data-plat=\"\">全部平台<\/button>';\n    b.platforms.forEach(function (p) {\n      html += '<button class=\"chip' + (state.platform === p.id ? ' on' : '') + '\" data-plat=\"' + esc(p.id) + '\">' +\n        '<span class=\"pico\" style=\"background:' + esc(p.color) + '\">' + esc(pico(p.name)) + '<\/span>' +\n        esc(p.name) + '<span class=\"cnt\">' + (s[p.id] || 0) + '<\/span><\/button>';\n    });\n    $('#platFilter').innerHTML = html;\n\n    var ghtml = '<button class=\"chip' + (state.group ? '' : ' on') + '\" data-group=\"\">全部分组<\/button>';\n    (b.groups || []).forEach(function (g) {\n      ghtml += '<button class=\"chip' + (state.group === g ? ' on' : '') + '\" data-group=\"' + esc(g) + '\">' + esc(g) + '<\/button>';\n    });\n    $('#groupFilter').innerHTML = (b.groups || []).length ? ghtml : '';\n\n    $('#platFilter').querySelectorAll('.chip').forEach(function (el) {\n      el.onclick = function () {\n        state.platform = state.platform === el.dataset.plat ? '' : el.dataset.plat;\n        state.limit = 30;\n        renderFilters(); renderMatrix(); refreshSamples();\n        if (state.q.trim()) doSearch();\n      };\n    });\n    $('#groupFilter').querySelectorAll('.chip').forEach(function (el) {\n      el.onclick = function () {\n        state.group = state.group === el.dataset.group ? '' : el.dataset.group;\n        state.limit = 30;\n        renderFilters(); refreshSamples();\n        if (state.q.trim()) doSearch();\n      };\n    });\n  }\n\n  /* ---------- 统计（数字滚动） ---------- */\n  function countUp(el, to, dur) {\n    var start = performance.now();\n    var from = 0;\n    function step(now) {\n      var p = Math.min((now - start) / dur, 1);\n      var e = 1 - Math.pow(1 - p, 3);\n      el.textContent = Math.round(from + (to - from) * e);\n      if (p < 1) requestAnimationFrame(step);\n    }\n    requestAnimationFrame(step);\n  }\n\n  function renderStats() {\n    var s = state.boot.stats;\n    var b = state.boot;\n    var cards = [\n      { n: s.people, t: '成员' },\n      { n: s.entries, t: '暗号 / 短链' },\n      { n: b.platforms.length, t: '平台' },\n      { n: (b.groups || []).length, t: '分组' },\n    ];\n    $('#stats').innerHTML = cards.map(function (c) {\n      return '<div class=\"stat\"><b data-to=\"' + c.n + '\">0<\/b><span>' + c.t + '<\/span><\/div>';\n    }).join('');\n    Array.prototype.forEach.call($('#stats').querySelectorAll('b'), function (el, i) {\n      setTimeout(function () { countUp(el, Number(el.dataset.to), 900); }, i * 90);\n    });\n    if (s.updatedAt) {\n      $('#updatedAt').textContent = '最近更新：' + new Date(s.updatedAt).toLocaleString('zh-CN');\n    }\n  }\n\n  /* ---------- 速览：平台矩阵 ---------- */\n  function renderMatrix() {\n    var b = state.boot;\n    var s = b.stats.byPlatform || {};\n    var plats = b.platforms.slice().sort(function (x, y) { return (x.order || 99) - (y.order || 99); });\n    var max = 1;\n    plats.forEach(function (p) { if ((s[p.id] || 0) > max) max = s[p.id] || 0; });\n    var total = 0;\n    plats.forEach(function (p) { total += s[p.id] || 0; });\n\n    $('#matrix').innerHTML = plats.map(function (p, i) {\n      var n = s[p.id] || 0;\n      var rel = max ? (n / max * 100) : 0;\n      return '<div class=\"mx' + (state.platform === p.id ? ' on' : '') + '\" data-plat=\"' + esc(p.id) + '\" style=\"--pc:' + esc(p.color) + '\">' +\n        '<div class=\"top\"><span class=\"ico\" style=\"background:' + esc(p.color) + '\">' + esc(pico(p.name)) + '<\/span>' +\n        '<span class=\"nm\">' + esc(p.name) + '<\/span><\/div>' +\n        '<div class=\"nums\"><b data-to=\"' + n + '\">0<\/b><small>条<\/small><\/div>' +\n        '<div class=\"bar\"><i data-w=\"' + rel.toFixed(1) + '\"><\/i><\/div>' +\n        '<\/div>';\n    }).join('');\n\n    Array.prototype.forEach.call($('#matrix').querySelectorAll('b'), function (el, i) {\n      setTimeout(function () { countUp(el, Number(el.dataset.to), 1000); }, 120 + i * 70);\n    });\n    Array.prototype.forEach.call($('#matrix').querySelectorAll('.bar i'), function (el, i) {\n      setTimeout(function () { el.style.width = Math.max(Number(el.dataset.w), 5) + '%'; }, 200 + i * 70);\n    });\n\n    $('#matrix').querySelectorAll('.mx').forEach(function (el) {\n      el.onclick = function () {\n        state.platform = state.platform === el.dataset.plat ? '' : el.dataset.plat;\n        state.limit = 30;\n        renderFilters(); renderMatrix(); refreshSamples();\n        if (state.q.trim()) doSearch();\n      };\n    });\n\n    var note = state.platform\n      ? '已聚焦「' + esc((plats.find(function (p) { return p.id === state.platform; }) || {}).name || '') + '」'\n      : '点击任意平台查看该平台随机样本';\n    $('#discoverNote').textContent = note;\n  }\n\n  /* ---------- 速览：滚动带 + 聚焦卡 + 预览墙 ---------- */\n  function refreshSamples() {\n    var qs = '?platform=' + encodeURIComponent(state.platform) +\n      '&group=' + encodeURIComponent(state.group) + '&n=14';\n    return api('/api/samples' + qs).then(function (s) {\n      state.samples = s;\n      renderMarquee(s);\n      renderPreview(s);\n      startSpot(s.items.slice(0, 6));\n    }).catch(function () {});\n  }\n\n  function renderMarquee(s) {\n    var items = s.items || [];\n    if (!items.length) { $('#mqTrack').innerHTML = ''; return; }\n    var one = items.map(function (it) {\n      return '<span class=\"mq-item\" style=\"--pc:' + esc(it.color) + '\">' +\n        '<span class=\"d\"><\/span><span class=\"v\">' + esc(it.maskedValue) + '<\/span>' +\n        '<span class=\"p\">' + esc(it.platformName) + '<\/span><\/span>';\n    }).join('');\n    $('#mqTrack').innerHTML = one + one;\n  }\n\n  function startSpot(items) {\n    clearInterval(state.spotTimer);\n    if (!items || !items.length) { $('#spotBody').innerHTML = ''; return; }\n    state.spotItems = items;\n    state.spotIdx = 0;\n    drawSpot(0);\n    state.spotTimer = setInterval(function () {\n      drawSpot((state.spotIdx + 1) % state.spotItems.length);\n    }, 4200);\n    $('#spotDots').innerHTML = items.map(function (_, i) {\n      return '<b data-i=\"' + i + '\"' + (i === 0 ? ' class=\"on\"' : '') + '><\/b>';\n    }).join('');\n  }\n\n  function drawSpot(i) {\n    var items = state.spotItems || [];\n    if (!items.length) return;\n    state.spotIdx = i;\n    var it = items[i];\n    $('#spotBody').innerHTML =\n      '<div class=\"spot-item\" style=\"--pc:' + esc(it.color) + '\">' +\n        '<div class=\"spot-plat\"><span class=\"ico\">' + esc(pico(it.platformName)) + '<\/span>' +\n          '<b>' + esc(it.platformName) + '<\/b>' +\n          (it.type ? '<span class=\"tag\">' + esc(it.type) + '<\/span>' : '') +\n          '<span class=\"tag\">' + (it.kind === 'link' ? '短链' : '暗号') + '<\/span><\/div>' +\n        '<div class=\"spot-code\">' + esc(it.maskedValue) + '<\/div>' +\n        '<div class=\"spot-who\">归属 ' + esc(it.maskedName) + (it.group ? ' · ' + esc(it.group) : '') + '<\/div>' +\n      '<\/div>';\n    Array.prototype.forEach.call($('#spotDots').children, function (d, k) {\n      d.classList.toggle('on', k === i);\n    });\n  }\n\n  function renderPreview(s) {\n    var show = !!(state.platform || state.group);\n    $('#previewBox').style.display = show ? '' : 'none';\n    if (!show) return;\n    var items = (s.items || []).slice(0, 12);\n    var name = '';\n    if (state.platform) {\n      var p = state.boot.platforms.find(function (x) { return x.id === state.platform; });\n      name = p ? p.name : '';\n    }\n    $('#pvTitle').textContent = (name ? name : esc(state.group)) + ' · 随机样本';\n    $('#pvNote').textContent = '共 ' + s.total + ' 条，以下为随机抽取的 ' + items.length + ' 条（已脱敏）';\n    $('#pvGrid').innerHTML = items.map(function (it, i) {\n      return '<div class=\"pv\" style=\"--pc:' + esc(it.color) + ';animation-delay:' + (i * 45) + 'ms\">' +\n        '<div class=\"t\"><span class=\"d\"><\/span>' + esc(it.platformName) + (it.type ? ' · ' + esc(it.type) : '') + '<\/div>' +\n        '<div class=\"v\">' + esc(it.maskedValue) + '<\/div>' +\n        '<div class=\"w\">' + esc(it.maskedName) + (it.group ? ' · ' + esc(it.group) : '') + '<\/div>' +\n        '<\/div>';\n    }).join('');\n  }\n\n  /* ---------- 查询结果 ---------- */\n  function codeChip(e, q) {\n    var hit = q && String(e.value).toLowerCase().indexOf(q.toLowerCase()) >= 0;\n    var isLink = e.kind === 'link';\n    var html = '<span class=\"code' + (hit ? ' hit' : '') + (isLink ? ' link' : '') + '\" data-copy=\"' + esc(e.value) + '\" title=\"点击复制\">';\n    html += highlight(e.value, q);\n    if (e.type) html += '<span class=\"kt\">' + esc(e.type) + '<\/span>';\n    if (isLink && e.url) {\n      html += '<a class=\"go\" href=\"' + esc(e.url) + '\" target=\"_blank\" rel=\"noopener\" title=\"打开链接\" onclick=\"event.stopPropagation()\">' +\n        '<svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M13 5h6v6\"/><path d=\"M19 5l-8 8\"/><path d=\"M18 14v5H5V6h5\"/><\/svg><\/a>';\n    }\n    html += '<\/span>';\n    return html;\n  }\n\n  function personCard(p, q) {\n    var groups = {};\n    p.entries.forEach(function (e) {\n      var pid = e.platformId;\n      if (!groups[pid]) groups[pid] = { name: (e.platform && e.platform.name) || pid, color: (e.platform && e.platform.color) || '#7c5cff', list: [] };\n      groups[pid].list.push(e);\n    });\n    var order = {};\n    state.boot.platforms.forEach(function (pl) { order[pl.id] = pl.order || 99; });\n    var keys = Object.keys(groups).sort(function (a, b) { return (order[a] || 99) - (order[b] || 99); });\n\n    var body = keys.map(function (k) {\n      var g = groups[k];\n      return '<div class=\"plat\">' +\n        '<div class=\"label\"><span class=\"pico\" style=\"background:' + esc(g.color) + '\">' + esc(pico(g.name)) + '<\/span>' +\n        esc(g.name) + '<span class=\"cnt\">· ' + g.list.length + '<\/span><\/div>' +\n        '<div class=\"chips\">' + g.list.map(function (e) { return codeChip(e, q); }).join('') + '<\/div>' +\n        '<\/div>';\n    }).join('');\n\n    return '<article class=\"person\">' +\n      '<div class=\"head\">' +\n        '<div class=\"avatar\" style=\"background:' + avatarColor(p.name) + '\">' + esc(p.name.slice(0, 1)) + '<\/div>' +\n        '<div><div class=\"name\">' + highlight(p.name, q) + '<\/div>' +\n          '<div class=\"sub\">' + (p.group ? '<span class=\"tag\">' + esc(p.group) + '<\/span>' : '') +\n          '<span class=\"tag\">' + p.entries.length + ' 条<\/span><\/div><\/div>' +\n        '<button class=\"btn sm ghost copy-all\" data-copyall=\"' + esc(p.id) + '\">复制全部<\/button>' +\n      '<\/div>' +\n      (body || '<div class=\"tiny muted\">该成员暂无记录<\/div>') +\n      '<\/article>';\n  }\n\n  function entryRow(e, q) {\n    var p = e.person || {};\n    var pl = e.platform || {};\n    return '<div class=\"entry\">' +\n      '<span class=\"val\">' + highlight(e.value, q) + '<\/span>' +\n      '<span class=\"who\"><b data-goto=\"' + esc(p.name || '') + '\">' + highlight(p.name || '未分配', q) + '<\/b>' +\n        (p.group ? ' <span class=\"tiny muted\">· ' + esc(p.group) + '<\/span>' : '') + '<\/span>' +\n      '<span class=\"right\">' +\n        (pl.name ? '<span class=\"tag\"><span class=\"pico\" style=\"background:' + esc(pl.color || '#7c5cff') + ';width:14px;height:14px;border-radius:4px;display:inline-grid;place-items:center;font-size:9px;color:#fff\">' + esc(pico(pl.name)) + '<\/span>' + esc(pl.name) + '<\/span>' : '') +\n        (e.type ? '<span class=\"tag\">' + esc(e.type) + '<\/span>' : '') +\n        (e.url ? '<a class=\"url\" href=\"' + esc(e.url) + '\" target=\"_blank\" rel=\"noopener\">' + esc(e.url) + '<\/a>' : '') +\n        '<button class=\"btn sm ghost\" data-copy=\"' + esc(e.value) + '\">复制<\/button>' +\n      '<\/span>' +\n      '<\/div>';\n  }\n\n  function render(data) {\n    var q = state.q.trim();\n    var box = $('#results');\n    var html = '';\n\n    if (!data.people.length && !data.entries.length) {\n      box.innerHTML = '<div class=\"empty\"><div class=\"big\">🔍<\/div>没有找到与「' + esc(q) + '」相关的内容<br>' +\n        '<span class=\"tiny\">换个关键词试试，或联系管理员添加<\/span><\/div>';\n      return;\n    }\n\n    if (data.people.length) {\n      html += '<div class=\"section-head\"><h2>匹配成员<\/h2><span class=\"n\">共 ' + data.peopleTotal + ' 人' +\n        (data.peopleTotal > data.people.length ? '（显示前 ' + data.people.length + '）' : '') + '<\/span><\/div>';\n      html += '<div class=\"people-grid\">' + data.people.map(function (p) { return personCard(p, q); }).join('') + '<\/div>';\n      if (data.peopleTotal > data.people.length) {\n        html += '<div style=\"text-align:center;margin:18px 0\"><button class=\"btn\" id=\"morePeople\">加载更多成员<\/button><\/div>';\n      }\n    }\n    if (data.entries.length) {\n      html += '<div class=\"section-head\"><h2>匹配暗号 / 短链<\/h2><span class=\"n\">共 ' + data.entriesTotal + ' 条' +\n        (data.entriesTotal > data.entries.length ? '（显示前 ' + data.entries.length + '）' : '') + '<\/span><\/div>';\n      html += '<div class=\"entry-list\">' + data.entries.map(function (e) { return entryRow(e, q); }).join('') + '<\/div>';\n      if (data.entriesTotal > data.entries.length) {\n        html += '<div style=\"text-align:center;margin:18px 0\"><button class=\"btn\" id=\"moreEntries\">加载更多记录<\/button><\/div>';\n      }\n    }\n\n    box.innerHTML = html;\n    bindResult();\n  }\n\n  function bindResult() {\n    document.querySelectorAll('[data-copy]').forEach(function (el) {\n      el.onclick = function (ev) {\n        if (ev.target.closest('a')) return;\n        copy(el.getAttribute('data-copy'));\n      };\n    });\n    document.querySelectorAll('[data-goto]').forEach(function (el) {\n      el.onclick = function () {\n        state.q = el.getAttribute('data-goto');\n        $('#q').value = state.q;\n        $('#searchbox').classList.add('has-value');\n        state.limit = 30;\n        doSearch();\n        window.scrollTo({ top: 0, behavior: 'smooth' });\n      };\n    });\n    document.querySelectorAll('[data-copyall]').forEach(function (el) {\n      el.onclick = function () {\n        var card = el.closest('.person');\n        var name = card.querySelector('.name').textContent;\n        var lines = [name];\n        card.querySelectorAll('.plat').forEach(function (pl) {\n          var label = pl.querySelector('.label').textContent.split('·')[0].trim();\n          var codes = [];\n          pl.querySelectorAll('.code').forEach(function (c) {\n            codes.push(c.textContent.replace(/(图文|视频)$/, '').trim());\n          });\n          lines.push(label + '：' + codes.join('、'));\n        });\n        copy(lines.join('\\n'));\n      };\n    });\n    var mp = document.getElementById('morePeople');\n    if (mp) mp.onclick = function () { state.limit += 30; doSearch(); };\n    var me = document.getElementById('moreEntries');\n    if (me) me.onclick = function () { state.entryLimit += 300; doSearch(); };\n  }\n\n  function switchView() {\n    var hasQ = !!state.q.trim();\n    $('#discover').style.display = hasQ ? 'none' : '';\n    $('#results').style.display = hasQ ? '' : 'none';\n  }\n\n  /* ---------- 搜索 ---------- */\n  function doSearch() {\n    var q = state.q.trim();\n    switchView();\n    if (!q) return;\n    if (state.loading) return;\n    state.loading = true;\n    var qs = new URLSearchParams({\n      q: q,\n      platform: state.platform,\n      group: state.group,\n      peopleLimit: String(state.limit),\n      entryLimit: String(state.entryLimit),\n    });\n    history.replaceState(null, '', location.pathname + '#q=' + encodeURIComponent(q));\n\n    api('/api/search?' + qs.toString()).then(function (d) {\n      render(d);\n    }).catch(function () {\n      $('#results').innerHTML = '<div class=\"empty\"><div class=\"big\">⚠️<\/div>加载失败，请刷新重试<\/div>';\n    }).then(function () { state.loading = false; });\n  }\n\n  /* ---------- 输入建议 ---------- */\n  var sugItems = [], sugIndex = -1;\n  function renderSuggest(data) {\n    var box = $('#suggest');\n    var html = '';\n    sugItems = [];\n    if (data.people.length) {\n      html += '<div class=\"grp\">成员<\/div>';\n      data.people.forEach(function (p) {\n        sugItems.push(p.name);\n        html += '<div class=\"item\" data-v=\"' + esc(p.name) + '\"><span>👤<\/span><span>' + highlight(p.name, state.q) + '<\/span>' +\n          (p.group ? '<span class=\"meta\">' + esc(p.group) + '<\/span>' : '') + '<\/div>';\n      });\n    }\n    if (data.codes.length) {\n      html += '<div class=\"grp\">暗号 / 短链<\/div>';\n      data.codes.forEach(function (c) {\n        sugItems.push(c.value);\n        html += '<div class=\"item\" data-v=\"' + esc(c.value) + '\"><span>#<\/span><span class=\"val\">' + highlight(c.value, state.q) + '<\/span>' +\n          '<span class=\"meta\">' + esc(c.platform || '') + '<\/span><\/div>';\n      });\n    }\n    if (!html) html = '<div class=\"empty\">无匹配建议<\/div>';\n    box.innerHTML = html;\n    box.classList.add('show');\n    sugIndex = -1;\n    box.querySelectorAll('.item').forEach(function (el) {\n      el.onmousedown = function (ev) {\n        ev.preventDefault();\n        pickSuggest(el.getAttribute('data-v'));\n      };\n    });\n  }\n\n  function pickSuggest(v) {\n    state.q = v;\n    $('#q').value = v;\n    $('#searchbox').classList.add('has-value');\n    $('#suggest').classList.remove('show');\n    state.limit = 30;\n    stopPlaceholder();\n    doSearch();\n  }\n\n  var loadSuggest = debounce(function () {\n    var q = state.q.trim();\n    if (!q) { $('#suggest').classList.remove('show'); return; }\n    api('/api/suggest?q=' + encodeURIComponent(q)).then(renderSuggest).catch(function () {});\n  }, 160);\n\n  /* ---------- 输入绑定 ---------- */\n  function bindInput() {\n    var input = $('#q');\n    input.addEventListener('input', function () {\n      state.q = input.value;\n      state.limit = 30;\n      $('#searchbox').classList.toggle('has-value', !!input.value);\n      if (input.value) stopPlaceholder();\n      loadSuggest();\n      doSearch();\n    });\n    input.addEventListener('focus', function () {\n      if (state.q.trim()) loadSuggest();\n    });\n    input.addEventListener('blur', function () {\n      if (!input.value) startPlaceholder();\n    });\n    input.addEventListener('keydown', function (e) {\n      var box = $('#suggest');\n      if (!box.classList.contains('show')) return;\n      var items = box.querySelectorAll('.item');\n      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {\n        e.preventDefault();\n        sugIndex += e.key === 'ArrowDown' ? 1 : -1;\n        if (sugIndex < 0) sugIndex = items.length - 1;\n        if (sugIndex >= items.length) sugIndex = 0;\n        items.forEach(function (el, i) { el.classList.toggle('active', i === sugIndex); });\n      } else if (e.key === 'Enter' && sugIndex >= 0) {\n        e.preventDefault();\n        pickSuggest(items[sugIndex].getAttribute('data-v'));\n      } else if (e.key === 'Escape') {\n        box.classList.remove('show');\n      }\n    });\n    document.addEventListener('click', function (e) {\n      if (!e.target.closest('.searchbox')) $('#suggest').classList.remove('show');\n    });\n    $('#clearBtn').onclick = function () {\n      input.value = '';\n      state.q = '';\n      state.limit = 30;\n      $('#searchbox').classList.remove('has-value');\n      $('#suggest').classList.remove('show');\n      switchView();\n      startPlaceholder();\n      input.focus();\n    };\n\n    $('#shuffleAll').onclick = function () {\n      refreshSamples().then(function () {\n        renderMatrix();\n        toast('已换一批', 'ok');\n      });\n    };\n    $('#spotMore').onclick = function () {\n      drawSpot((state.spotIdx + 1) % (state.spotItems || [1]).length);\n    };\n    var nd = document.getElementById('navDiscover');\n    if (nd) nd.onclick = function () {\n      input.value = '';\n      state.q = '';\n      state.limit = 30;\n      $('#searchbox').classList.remove('has-value');\n      switchView();\n      startPlaceholder();\n    };\n  }\n\n  /* ---------- 启动 ---------- */\n  initBackground();\n  initTheme();\n\n  api('/api/bootstrap').then(function (b) {\n    state.boot = b;\n    document.title = b.settings.siteName;\n    $('#siteName').textContent = b.settings.siteName;\n    if (b.settings.subtitle) $('#subtitle').textContent = b.settings.subtitle;\n    renderFilters();\n    renderStats();\n    renderMatrix();\n    setupLogo(b);\n    renderFeedback(b);\n    bindInput();\n    bindFeedback();\n\n    // 先拿随机样本（决定占位提示 + 速览内容）\n    api('/api/samples?n=14').then(function (s) {\n      state.phCands = buildPlaceholders(s);\n      startPlaceholder();\n    });\n    refreshSamples();\n\n    // 供内置后台在改完数据后刷新前台\n    window.__CH_REFRESH__ = function () {\n      try { renderFilters(); renderStats(); renderMatrix(); } catch (e) {}\n      refreshSamples();\n      switchView();\n      doSearch();\n    };\n\n    var m = location.hash.match(/q=([^&]*)/);\n    if (m) {\n      state.q = decodeURIComponent(m[1]);\n      $('#q').value = state.q;\n      $('#searchbox').classList.add('has-value');\n      stopPlaceholder();\n      doSearch();\n    } else {\n      switchView();\n    }\n  }).catch(function () {\n    $('#results').style.display = '';\n    $('#results').innerHTML = '<div class=\"empty\"><div class=\"big\">⚠️<\/div>服务未启动或加载失败<\/div>';\n  });\n})();\n", "adminPartial": "<!-- ===== 内置后台（默认隐藏，点 Logo 5 次唤出入口） ===== -->\n\n<!-- 口令门 -->\n<div id=\"admGate\" class=\"login-page\" style=\"display:none\">\n  <form class=\"card login-card\" id=\"admGateForm\">\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:14px\">\n      <span class=\"logo\" id=\"admGateLogo\" style=\"width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#ff5c8a);color:#fff;font-weight:800;overflow:hidden\">#<\/span>\n      <b style=\"font-size:17px\" id=\"admGateTitle\">管理后台<\/b>\n    <\/div>\n    <div class=\"tiny muted\" style=\"margin-bottom:6px\">输入口令进入后台<\/div>\n    <div class=\"row\">\n      <label class=\"tiny muted\">口令<\/label>\n      <input class=\"input\" id=\"admGatePass\" type=\"password\" autocomplete=\"current-password\" placeholder=\"访问口令\">\n    <\/div>\n    <div class=\"err-text\" id=\"admGateErr\"><\/div>\n    <button class=\"btn primary\" type=\"submit\" id=\"admGateBtn\">进 入<\/button>\n    <div class=\"tiny muted\" style=\"margin-top:14px;text-align:center\">\n      <a href=\"#\" id=\"admGateCancel\">返回前台<\/a>\n    <\/div>\n  <\/form>\n<\/div>\n\n<div id=\"admRoot\" style=\"display:none\">\n  <header class=\"admin-head\">\n    <div class=\"wrap\">\n      <a class=\"brand\" href=\"#\" id=\"admHome\">\n        <span class=\"logo\" id=\"admBrandLogoBox\" style=\"overflow:hidden\"><img id=\"admBrandLogo\" src=\"\" alt=\"logo\"><\/span>\n        <span>管理后台<\/span>\n      <\/a>\n      <div class=\"tabs\" id=\"admTabs\">\n        <button data-tab=\"dash\" class=\"on\">概览<\/button>\n        <button data-tab=\"people\">成员<\/button>\n        <button data-tab=\"entries\">暗号记录<\/button>\n        <button data-tab=\"bulk\">批量导入<\/button>\n        <button data-tab=\"platforms\">平台<\/button>\n        <button data-tab=\"settings\">站点设置<\/button>\n        <button data-tab=\"export\">导出发布<\/button>\n      <\/div>\n      <div style=\"margin-left:auto;display:flex;gap:8px;align-items:center\">\n        <button class=\"btn sm ghost\" id=\"admExit\">退出后台<\/button>\n      <\/div>\n    <\/div>\n  <\/header>\n\n  <main class=\"wrap\">\n    <div id=\"admDraftBar\" class=\"tip-bar\" style=\"display:none;margin-top:18px\">\n      已载入本机草稿 <b id=\"admDraftTime\"><\/b>（未导出，仅本浏览器可见）\n      <button class=\"btn sm ghost\" id=\"admDraftDrop\" style=\"margin-left:8px\">放弃草稿<\/button>\n    <\/div>\n\n    <section class=\"panel on\" id=\"adm-panel-dash\">\n      <div class=\"kv\" id=\"admDashStats\"><\/div>\n      <div class=\"card\" style=\"padding:20px;margin-top:16px\">\n        <h3 style=\"margin:0 0 4px\">怎么让所有人看到最新数据<\/h3>\n        <ol class=\"tiny muted\" style=\"margin:0;padding-left:20px;line-height:1.9\">\n          <li>在这里改数据（改动立刻在本页生效，并自动存本机草稿）<\/li>\n          <li>到「导出发布」下载 <b>index.html<\/b> 和 <b>db.json<\/b><\/li>\n          <li>覆盖仓库根目录文件后 <code>git commit &amp;&amp; git push<\/code><\/li>\n          <li>1~2 分钟后所有人刷新前台就是最新版<\/li>\n        <\/ol>\n      <\/div>\n      <div class=\"table-card\" style=\"margin-top:16px\">\n        <div style=\"padding:14px 16px;border-bottom:1px solid var(--border)\"><b>各平台记录数<\/b><\/div>\n        <div class=\"tbl-scroll\"><table class=\"tbl\"><tbody id=\"admDashPlat\"><\/tbody><\/table><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-people\">\n      <div class=\"toolbar\">\n        <input class=\"input grow\" id=\"admPQ\" placeholder=\"搜索成员姓名…\">\n        <select class=\"select\" id=\"admPGroup\"><option value=\"\">全部分组<\/option><\/select>\n        <div class=\"spacer\"><\/div>\n        <button class=\"btn primary\" id=\"admPAdd\">+ 新增成员<\/button>\n      <\/div>\n      <div class=\"table-card\">\n        <div class=\"tbl-scroll\">\n          <table class=\"tbl\">\n            <thead><tr><th style=\"width:60px\">ID<\/th><th>姓名<\/th><th>分组<\/th><th style=\"width:90px\">记录数<\/th><th style=\"width:170px\">操作<\/th><\/tr><\/thead>\n            <tbody id=\"admPBody\"><\/tbody>\n          <\/table>\n        <\/div>\n        <div class=\"table-foot\"><span id=\"admPCount\"><\/span><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-entries\">\n      <div class=\"toolbar\">\n        <input class=\"input grow\" id=\"admEQ\" placeholder=\"搜索暗号 / 短链 / 姓名…\">\n        <select class=\"select\" id=\"admEPlat\"><option value=\"\">全部平台<\/option><\/select>\n        <select class=\"select\" id=\"admEGroup\"><option value=\"\">全部分组<\/option><\/select>\n        <div class=\"spacer\"><\/div>\n        <button class=\"btn primary\" id=\"admEAdd\">+ 新增记录<\/button>\n      <\/div>\n      <div class=\"table-card\">\n        <div class=\"tbl-scroll\">\n          <table class=\"tbl\">\n            <thead><tr>\n              <th style=\"width:56px\">ID<\/th><th style=\"width:110px\">成员<\/th><th style=\"width:110px\">平台<\/th>\n              <th style=\"width:180px\">暗号 / 短链<\/th><th style=\"width:70px\">类型<\/th><th>链接<\/th><th style=\"width:150px\">操作<\/th>\n            <\/tr><\/thead>\n            <tbody id=\"admEBody\"><\/tbody>\n          <\/table>\n        <\/div>\n        <div class=\"table-foot\"><span id=\"admECount\"><\/span><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-bulk\">\n      <div class=\"card\" style=\"padding:20px\">\n        <h3 style=\"margin:0 0 6px\">批量粘贴导入<\/h3>\n        <p class=\"tiny muted\" style=\"margin-top:0\">\n          每行一条，空格 / 逗号 / 制表符分隔：<code>姓名 暗号 平台 类型 链接<\/code><br>\n          平台可写 <code>threads / ins / tik / x / fb / 视频 / 短链 / 图文<\/code>；<code>#<\/code> 开头为注释。\n        <\/p>\n        <div class=\"form-grid\" style=\"margin:14px 0\">\n          <div><label class=\"tiny muted\">默认平台<\/label><select class=\"select\" id=\"admBPlat\"><\/select><\/div>\n          <div><label class=\"tiny muted\">新成员默认分组<\/label><input class=\"input\" id=\"admBGroup\" placeholder=\"例如 Laya\"><\/div>\n        <\/div>\n        <textarea class=\"textarea\" id=\"admBText\" placeholder=\"张三 1234 ins&#10;张三 5678 tik\"><\/textarea>\n        <div style=\"margin-top:14px\"><button class=\"btn primary\" id=\"admBSubmit\">导入<\/button><\/div>\n        <div id=\"admBResult\" style=\"margin-top:14px\"><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-platforms\">\n      <div class=\"card\" style=\"padding:20px\">\n        <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:14px\">\n          <h3 style=\"margin:0\">平台管理<\/h3><div class=\"spacer\"><\/div>\n          <button class=\"btn primary\" id=\"admPlAdd\">+ 新增平台<\/button>\n        <\/div>\n        <div class=\"plat-editor\" id=\"admPlList\"><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-settings\">\n      <div class=\"card\" style=\"padding:20px;margin-bottom:16px\">\n        <h3 style=\"margin:0 0 14px\">站点信息<\/h3>\n        <div class=\"form-grid\">\n          <div><label class=\"tiny muted\">站点名称<\/label><input class=\"input\" id=\"admSName\"><\/div>\n          <div><label class=\"tiny muted\">副标题<\/label><input class=\"input\" id=\"admSSub\"><\/div>\n        <\/div>\n        <div style=\"margin-top:12px\"><label class=\"tiny muted\">分组（英文逗号分隔）<\/label><input class=\"input\" id=\"admSGroups\"><\/div>\n        <div style=\"margin-top:12px\"><label class=\"tiny muted\">Logo 路径（英文逗号分隔）<\/label><input class=\"input\" id=\"admSLogos\"><\/div>\n        <div style=\"margin-top:14px\"><button class=\"btn primary\" id=\"admSSave\">保存<\/button><\/div>\n      <\/div>\n\n      <div class=\"card\" style=\"padding:20px\">\n        <h3 style=\"margin:0 0 14px\">问题反馈区<\/h3>\n        <div class=\"form-grid\">\n          <div><label class=\"tiny muted\">标题<\/label><input class=\"input\" id=\"admFbTitle\"><\/div>\n          <div><label class=\"tiny muted\">说明<\/label><input class=\"input\" id=\"admFbDesc\"><\/div>\n        <\/div>\n        <label class=\"tiny muted\" style=\"display:flex;align-items:center;gap:8px;margin-top:12px\">\n          <input type=\"checkbox\" id=\"admFbEnable\" style=\"width:16px;height:16px\"> 开启访客留言表单\n        <\/label>\n        <div style=\"margin-top:16px\">\n          <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px\">\n            <b class=\"tiny\">联系方式<\/b><div class=\"spacer\"><\/div>\n            <button class=\"btn sm\" id=\"admCtAdd\">+ 添加<\/button>\n          <\/div>\n          <div id=\"admCtList\" style=\"display:flex;flex-direction:column;gap:8px\"><\/div>\n        <\/div>\n        <div style=\"margin-top:14px\"><button class=\"btn primary\" id=\"admFbSave\">保存反馈配置<\/button><\/div>\n      <\/div>\n    <\/section>\n\n    <section class=\"panel\" id=\"adm-panel-export\">\n      <div class=\"card\" style=\"padding:20px\">\n        <h3 style=\"margin:0 0 6px\">导出并发布<\/h3>\n        <p class=\"tiny muted\" style=\"margin-top:0\">下载后覆盖仓库根目录文件，再 <code>git commit &amp;&amp; git push<\/code>，1~2 分钟生效。<\/p>\n        <div style=\"display:flex;gap:10px;flex-wrap:wrap;margin-top:14px\">\n          <button class=\"btn primary\" id=\"admExpIndex\">下载 index.html<\/button>\n          <button class=\"btn\" id=\"admExpDb\">下载 db.json<\/button>\n        <\/div>\n        <div style=\"display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)\">\n          <button class=\"btn ghost\" id=\"admImpDb\">导入 db.json 继续编辑<\/button>\n          <input type=\"file\" id=\"admImpFile\" accept=\"application/json,.json\" hidden>\n          <button class=\"btn danger\" id=\"admDropDraft\">清除本机草稿<\/button>\n        <\/div>\n        <div id=\"admExpMsg\" class=\"tiny\" style=\"margin-top:12px\"><\/div>\n      <\/div>\n      <div class=\"card\" style=\"padding:20px;margin-top:16px\">\n        <h3 style=\"margin:0 0 10px\">当前数据<\/h3>\n        <div class=\"kv\" id=\"admExpStats\"><\/div>\n        <div class=\"tiny muted\">最近保存：<span id=\"admExpTime\">-<\/span>　·　草稿存在本机浏览器，换设备会丢失，重要改动请导出。<\/div>\n      <\/div>\n    <\/section>\n  <\/main>\n<\/div>\n\n<div class=\"modal-mask\" id=\"admMask\">\n  <div class=\"modal\">\n    <header><h3 id=\"admMTitle\">标题<\/h3><button class=\"x\" id=\"admMClose\">×<\/button><\/header>\n    <div class=\"body\" id=\"admMBody\"><\/div>\n    <footer><button class=\"btn ghost\" id=\"admMCancel\">取消<\/button><button class=\"btn primary\" id=\"admMOk\">确定<\/button><\/footer>\n  <\/div>\n<\/div>\n\n<div id=\"admToast\"><\/div>\n", "adminJs": "/**\n * CipherHub 内置后台（单页版）\n *\n * 作为片段内嵌在 index.html 里，默认隐藏。\n * 触发方式：连点前台 Logo 5 次 → 口令 → 进入后台（同一页面，不跳转）。\n *\n * 数据来自 window.__DATA__；改动会：\n *   1) 立刻通过 window.__CH_SET_DATA__ 同步给前台（本页即时生效）\n *   2) 自动存本机 localStorage 草稿\n *   3) 通过「导出发布」生成新的 index.html / db.json，push 后对所有人生效\n */\n(function () {\n  'use strict';\n\n  var DRAFT_KEY = 'ch_admin_draft';\n  var OK_KEY = 'ch_admin_ok';\n  var PASS = window.__ADMIN_PASS__ || 'admin123';\n  var TPL = window.__TPL__ || {};\n\n  var DB = null;\n  var peopleCache = [], entryCache = [];\n  var mounted = false;\n\n  function $(s) { return document.querySelector(s); }\n  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }\n  function panel(n) { return $('#adm-panel-' + n); }\n\n  function esc(s) {\n    return String(s == null ? '' : s)\n      .replace(/&/g, '&amp;').replace(/<\/g, '&lt;').replace(/>/g, '&gt;')\n      .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');\n  }\n\n  function toast(msg, type) {\n    var box = $('#admToast');\n    if (!box) return;\n    var el = document.createElement('div');\n    el.className = 'toast-item ' + (type || '');\n    el.textContent = msg;\n    box.appendChild(el);\n    setTimeout(function () {\n      el.style.transition = 'opacity .25s';\n      el.style.opacity = '0';\n      setTimeout(function () { el.remove(); }, 260);\n    }, 2000);\n  }\n\n  function clone(o) { return JSON.parse(JSON.stringify(o)); }\n  function nextId(arr) {\n    var m = 0;\n    (arr || []).forEach(function (x) { if (typeof x.id === 'number' && x.id > m) m = x.id; });\n    return m + 1;\n  }\n\n  function normalize(db) {\n    db = db || {};\n    db.platforms = db.platforms || [];\n    db.groups = db.groups || [];\n    db.people = db.people || [];\n    db.entries = db.entries || [];\n    db.settings = db.settings || {};\n    if (!db.settings.logos || !db.settings.logos.length) db.settings.logos = ['assets/Laya.png', 'assets/Laya2.png'];\n    if (!db.settings.feedback) db.settings.feedback = { title: '问题反馈', desc: '', enableForm: true };\n    if (!Array.isArray(db.settings.contacts)) db.settings.contacts = [];\n    return db;\n  }\n\n  /* ---------------- 草稿 ---------------- */\n  function saveDraft() {\n    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), db: DB })); }\n    catch (e) { toast('本机存储空间不足，请及时导出', 'err'); }\n    var t = $('#admExpTime');\n    if (t) t.textContent = new Date().toLocaleString('zh-CN');\n  }\n\n  function loadDraft() {\n    try {\n      var raw = localStorage.getItem(DRAFT_KEY);\n      return raw ? JSON.parse(raw) : null;\n    } catch (e) { return null; }\n  }\n\n  function syncFront() {\n    if (window.__CH_SET_DATA__) { try { window.__CH_SET_DATA__(DB); } catch (e) {} }\n    if (window.__CH_REFRESH__) { try { window.__CH_REFRESH__(); } catch (e) {} }\n  }\n\n  /* ---------------- 显示 / 隐藏 ---------------- */\n  function showGate() {\n    $('#admGate').style.display = 'grid';\n    $('#admRoot').style.display = 'none';\n    document.body.classList.add('adm-on');\n    setTimeout(function () { var p = $('#admGatePass'); if (p) p.focus(); }, 60);\n  }\n\n  function showAdmin() {\n    $('#admGate').style.display = 'none';\n    $('#admRoot').style.display = 'block';\n    document.body.classList.add('adm-on');\n    window.scrollTo(0, 0);\n  }\n\n  function exitAdmin() {\n    document.body.classList.remove('adm-on');\n    $('#admRoot').style.display = 'none';\n    $('#admGate').style.display = 'none';\n    syncFront();\n    window.scrollTo(0, 0);\n  }\n\n  /* ---------------- 进入流程 ---------------- */\n  function boot() {\n    if (mounted) { showAdmin(); return; }\n    mounted = true;\n\n    var draft = loadDraft();\n    if (draft && draft.db) {\n      DB = normalize(draft.db);\n      $('#admDraftBar').style.display = '';\n      $('#admDraftTime').textContent = new Date(draft.at).toLocaleString('zh-CN');\n    } else {\n      DB = normalize(clone(window.__DATA__ || {}));\n    }\n    $('#admExpTime').textContent = draft ? new Date(draft.at).toLocaleString('zh-CN') : '-';\n\n    fillSelects();\n    renderAll();\n    bindAll();\n    setupLogos();\n    showAdmin();\n  }\n\n  window.CHAdmin = {\n    open: function () {\n      if (!PASS) { localStorage.setItem(OK_KEY, '1'); boot(); return; }\n      if (localStorage.getItem(OK_KEY) === '1') { boot(); return; }\n      showGate();\n    },\n    isOpen: function () { return document.body.classList.contains('adm-on'); },\n  };\n\n  /* ---------------- 渲染 ---------------- */\n  function pmap() { var m = {}; DB.platforms.forEach(function (p) { m[p.id] = p; }); return m; }\n  function pemap() { var m = {}; DB.people.forEach(function (p) { m[p.id] = p; }); return m; }\n\n  function stats() {\n    var c = {};\n    DB.platforms.forEach(function (p) { c[p.id] = 0; });\n    DB.entries.forEach(function (e) { if (c[e.platformId] === undefined) c[e.platformId] = 0; c[e.platformId]++; });\n    return { people: DB.people.length, entries: DB.entries.length, platforms: DB.platforms.length, byPlatform: c };\n  }\n\n  function renderAll() { renderDash(); renderPeople(); renderEntries(); renderPlatforms(); loadSettings(); }\n\n  function renderDash() {\n    var s = stats();\n    var cards = [\n      { n: s.people, t: '成员' }, { n: s.entries, t: '暗号 / 短链' },\n      { n: s.platforms, t: '平台' }, { n: DB.groups.length, t: '分组' },\n    ];\n    var html = cards.map(function (c) {\n      return '<div class=\"box\"><b>' + c.n + '<\/b><span>' + c.t + '<\/span><\/div>';\n    }).join('');\n    $('#admDashStats').innerHTML = html;\n    $('#admExpStats').innerHTML = html;\n\n    var plats = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });\n    var max = 1;\n    plats.forEach(function (p) { if ((s.byPlatform[p.id] || 0) > max) max = s.byPlatform[p.id]; });\n    $('#admDashPlat').innerHTML = plats.map(function (p) {\n      var n = s.byPlatform[p.id] || 0;\n      return '<tr><td style=\"width:120px\"><span class=\"tag\"><span style=\"width:8px;height:8px;border-radius:50%;background:' + esc(p.color) + ';display:inline-block\"><\/span>' + esc(p.name) + '<\/span><\/td>' +\n        '<td><div style=\"height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden\"><div style=\"height:100%;width:' + (max ? (n / max * 100) : 0).toFixed(1) + '%;background:' + esc(p.color) + '\"><\/div><\/div><\/td>' +\n        '<td style=\"width:70px;text-align:right\" class=\"mono\">' + n + '<\/td><\/tr>';\n    }).join('');\n  }\n\n  function renderPeople() {\n    var q = $('#admPQ').value.trim().toLowerCase();\n    var g = $('#admPGroup').value;\n    var list = DB.people.filter(function (p) {\n      if (q && String(p.name).toLowerCase().indexOf(q) < 0) return false;\n      if (g && String(p.group || '').indexOf(g) < 0) return false;\n      return true;\n    }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'zh'); });\n    peopleCache = list;\n    $('#admPCount').textContent = '共 ' + list.length + ' 人';\n    $('#admPBody').innerHTML = list.map(function (p) {\n      var cnt = DB.entries.filter(function (e) { return e.personId === p.id; }).length;\n      return '<tr><td class=\"mono muted\">' + p.id + '<\/td><td><b>' + esc(p.name) + '<\/b><\/td>' +\n        '<td class=\"muted\">' + esc(p.group || '-') + '<\/td><td class=\"mono\">' + cnt + '<\/td>' +\n        '<td><div class=\"ops\"><button class=\"btn sm\" data-edit=\"' + p.id + '\">编辑<\/button>' +\n        '<button class=\"btn sm danger\" data-del=\"' + p.id + '\">删除<\/button><\/div><\/td><\/tr>';\n    }).join('') || '<tr><td colspan=\"5\" style=\"text-align:center;color:var(--text-mute);padding:26px\">暂无成员<\/td><\/tr>';\n    $$('#admPBody [data-edit]').forEach(function (b) { b.onclick = function () { editPerson(Number(b.dataset.edit)); }; });\n    $$('#admPBody [data-del]').forEach(function (b) { b.onclick = function () { delPerson(Number(b.dataset.del)); }; });\n  }\n\n  function renderEntries() {\n    var q = $('#admEQ').value.trim().toLowerCase();\n    var pf = $('#admEPlat').value, g = $('#admEGroup').value;\n    var pe = pemap(), pm = pmap();\n    var list = DB.entries.filter(function (e) {\n      if (pf && e.platformId !== pf) return false;\n      var p = pe[e.personId];\n      if (g && (!p || String(p.group || '').indexOf(g) < 0)) return false;\n      if (q) {\n        var v = String(e.value || '').toLowerCase();\n        if (v.indexOf(q) < 0 && (!p || String(p.name).toLowerCase().indexOf(q) < 0)) return false;\n      }\n      return true;\n    }).sort(function (a, b) { return b.id - a.id; });\n    entryCache = list;\n    $('#admECount').textContent = '显示 ' + Math.min(list.length, 400) + ' 条 / 共 ' + DB.entries.length + ' 条';\n    $('#admEBody').innerHTML = list.slice(0, 400).map(function (e) {\n      var p = pe[e.personId] || {}, pl = pm[e.platformId] || {};\n      return '<tr><td class=\"mono muted\">' + e.id + '<\/td>' +\n        '<td>' + esc(p.name || '-') + '<\/td>' +\n        '<td><span class=\"tag\"><span style=\"width:8px;height:8px;border-radius:50%;background:' + esc(pl.color || '#7c5cff') + ';display:inline-block\"><\/span>' + esc(pl.name || e.platformId) + '<\/span><\/td>' +\n        '<td class=\"mono\">' + esc(e.value) + '<\/td>' +\n        '<td class=\"tiny muted\">' + esc(e.type || '-') + '<\/td>' +\n        '<td class=\"tiny muted\" style=\"max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">' + (e.url ? esc(e.url) : '-') + '<\/td>' +\n        '<td><div class=\"ops\"><button class=\"btn sm\" data-edit=\"' + e.id + '\">编辑<\/button>' +\n        '<button class=\"btn sm danger\" data-del=\"' + e.id + '\">删除<\/button><\/div><\/td><\/tr>';\n    }).join('') || '<tr><td colspan=\"7\" style=\"text-align:center;color:var(--text-mute);padding:26px\">暂无记录<\/td><\/tr>';\n    $$('#admEBody [data-edit]').forEach(function (b) { b.onclick = function () { editEntry(Number(b.dataset.edit)); }; });\n    $$('#admEBody [data-del]').forEach(function (b) { b.onclick = function () { delEntry(Number(b.dataset.del)); }; });\n  }\n\n  function renderPlatforms() {\n    var s = stats();\n    var list = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });\n    $('#admPlList').innerHTML = list.map(function (p) {\n      return '<div class=\"row\" data-id=\"' + esc(p.id) + '\">' +\n        '<input class=\"input\" data-k=\"name\" value=\"' + esc(p.name) + '\" placeholder=\"名称\">' +\n        '<input class=\"input\" data-k=\"id\" value=\"' + esc(p.id) + '\" placeholder=\"标识\">' +\n        '<input class=\"input\" data-k=\"color\" type=\"color\" value=\"' + esc(p.color || '#7c5cff') + '\" style=\"padding:4px;height:42px\">' +\n        '<input class=\"input\" data-k=\"order\" type=\"number\" value=\"' + (p.order || 0) + '\" placeholder=\"排序\">' +\n        '<div style=\"display:flex;gap:6px\"><button class=\"btn sm\" data-save=\"' + esc(p.id) + '\">保存<\/button>' +\n        '<button class=\"btn sm danger\" data-del=\"' + esc(p.id) + '\"' + ((s.byPlatform[p.id] || 0) > 0 ? ' disabled title=\"仍有记录占用\"' : '') + '>删除<\/button><\/div><\/div>';\n    }).join('');\n    $$('#admPlList [data-save]').forEach(function (b) {\n      b.onclick = function () {\n        var row = b.closest('.row');\n        var get = function (k) { return row.querySelector('[data-k=\"' + k + '\"]').value.trim(); };\n        var old = DB.platforms.filter(function (x) { return x.id === b.dataset.save; })[0];\n        var nid = get('id');\n        if (!get('name')) { toast('名称不能为空', 'err'); return; }\n        if (nid !== old.id) {\n          if (DB.platforms.some(function (x) { return x.id === nid; })) { toast('标识已存在', 'err'); return; }\n          DB.entries.forEach(function (e) { if (e.platformId === old.id) e.platformId = nid; });\n        }\n        old.id = nid; old.name = get('name'); old.color = get('color'); old.order = Number(get('order'));\n        commit(); toast('已保存', 'ok');\n      };\n    });\n    $$('#admPlList [data-del]').forEach(function (b) {\n      b.onclick = function () {\n        DB.platforms = DB.platforms.filter(function (x) { return x.id !== b.dataset.del; });\n        commit(); toast('已删除', 'ok');\n      };\n    });\n  }\n\n  function commit() {\n    saveDraft();\n    syncFront();\n    renderDash(); renderPeople(); renderEntries(); renderPlatforms(); loadSettings();\n  }\n\n  /* ---------------- 增删改 ---------------- */\n  function editPerson(id) {\n    var p = id ? peopleCache.filter(function (x) { return x.id === id; })[0] : null;\n    openModal(id ? '编辑成员' : '新增成员',\n      '<div class=\"form-row\"><label>姓名 *<\/label><input class=\"input\" id=\"admFName\" value=\"' + esc(p ? p.name : '') + '\"><\/div>' +\n      '<div class=\"form-row\"><label>分组<\/label><input class=\"input\" id=\"admFGroup\" value=\"' + esc(p ? p.group : '') + '\" placeholder=\"例如 Laya\"><\/div>' +\n      '<div class=\"err-text\" id=\"admFErr\"><\/div>',\n      function () {\n        var name = $('#admFName').value.trim(), group = $('#admFGroup').value.trim();\n        if (!name) { $('#admFErr').textContent = '姓名不能为空'; return false; }\n        if (DB.people.some(function (x) { return x.name === name && x.id !== id; })) { $('#admFErr').textContent = '已有同名成员'; return false; }\n        if (p) { p.name = name; p.group = group; }\n        else DB.people.push({ id: nextId(DB.people), name: name, group: group, note: '' });\n        if (group && DB.groups.indexOf(group) < 0) DB.groups.push(group);\n        closeModal(); commit(); toast('已保存', 'ok');\n        return false;\n      });\n  }\n\n  function delPerson(id) {\n    var p = peopleCache.filter(function (x) { return x.id === id; })[0];\n    var cnt = DB.entries.filter(function (e) { return e.personId === id; }).length;\n    confirmModal('删除成员', '确定删除「' + esc(p ? p.name : id) + '」？其下 ' + cnt + ' 条记录也会一并删除。', function () {\n      DB.people = DB.people.filter(function (x) { return x.id !== id; });\n      DB.entries = DB.entries.filter(function (e) { return e.personId !== id; });\n      commit(); toast('已删除', 'ok');\n    });\n  }\n\n  function editEntry(id) {\n    if (!DB.people.length) { toast('请先新增成员', 'err'); return; }\n    var e = id ? entryCache.filter(function (x) { return x.id === id; })[0] : null;\n    var po = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); }).map(function (p) {\n      return '<option value=\"' + esc(p.id) + '\"' + (e && e.platformId === p.id ? ' selected' : '') + '>' + esc(p.name) + '<\/option>';\n    }).join('');\n    var pe = DB.people.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'zh'); }).map(function (p) {\n      return '<option value=\"' + p.id + '\"' + (e && e.personId === p.id ? ' selected' : '') + '>' + esc(p.name) + '<\/option>';\n    }).join('');\n    openModal(id ? '编辑记录' : '新增记录',\n      '<div class=\"form-grid\">' +\n      '<div class=\"form-row\"><label>成员 *<\/label><select class=\"select\" id=\"admFPerson\">' + pe + '<\/select><\/div>' +\n      '<div class=\"form-row\"><label>平台 *<\/label><select class=\"select\" id=\"admFPlat\">' + po + '<\/select><\/div><\/div>' +\n      '<div class=\"form-row\"><label>暗号 / 短链 *<\/label><input class=\"input\" id=\"admFValue\" value=\"' + esc(e ? e.value : '') + '\"><\/div>' +\n      '<div class=\"form-grid\">' +\n      '<div class=\"form-row\"><label>记录类型<\/label><select class=\"select\" id=\"admFKind\">' +\n      '<option value=\"code\"' + (!e || e.kind === 'code' ? ' selected' : '') + '>暗号<\/option>' +\n      '<option value=\"link\"' + (e && e.kind === 'link' ? ' selected' : '') + '>短链<\/option><\/select><\/div>' +\n      '<div class=\"form-row\"><label>内容类型<\/label><input class=\"input\" id=\"admFType\" value=\"' + esc(e ? e.type : '') + '\" placeholder=\"图文 / 视频\"><\/div><\/div>' +\n      '<div class=\"form-row\"><label>链接地址<\/label><input class=\"input\" id=\"admFUrl\" value=\"' + esc(e ? e.url : '') + '\" placeholder=\"https://...\"><\/div>' +\n      '<div class=\"err-text\" id=\"admFErr\"><\/div>',\n      function () {\n        var v = $('#admFValue').value.trim();\n        if (!v) { $('#admFErr').textContent = '暗号 / 短链不能为空'; return false; }\n        var data = {\n          personId: Number($('#admFPerson').value), platformId: $('#admFPlat').value,\n          kind: $('#admFKind').value, value: v, type: $('#admFType').value.trim(), url: $('#admFUrl').value.trim(),\n        };\n        if (e) { Object.keys(data).forEach(function (k) { e[k] = data[k]; }); }\n        else { data.id = nextId(DB.entries); data.note = ''; DB.entries.push(data); }\n        closeModal(); commit(); toast('已保存', 'ok');\n        return false;\n      });\n  }\n\n  function delEntry(id) {\n    var e = entryCache.filter(function (x) { return x.id === id; })[0];\n    confirmModal('删除记录', '确定删除「' + esc(e ? e.value : id) + '」？', function () {\n      DB.entries = DB.entries.filter(function (x) { return x.id !== id; });\n      commit(); toast('已删除', 'ok');\n    });\n  }\n\n  /* ---------------- 批量导入 ---------------- */\n  var ALIAS = {\n    threads: 'threads', thareads: 'threads', thresds: 'threads',\n    ins: 'instagram', instagram: 'instagram', ig: 'instagram',\n    tik: 'tiktok', tiktok: 'tiktok', tk: 'tiktok',\n    x: 'x', twitter: 'x', fb: 'facebook', facebook: 'facebook',\n    视频: 'video', video: 'video', sp: 'video',\n    短链: 'link', link: 'link', 图文: 'image', image: 'image', tw: 'image',\n  };\n\n  function bulk() {\n    var lines = $('#admBText').value.split(/\\r?\\n/);\n    var defPlat = $('#admBPlat').value, defGroup = $('#admBGroup').value.trim();\n    var byName = {};\n    DB.platforms.forEach(function (p) { byName[p.name.toLowerCase()] = p.id; });\n    var made = { people: 0, entries: 0 }, errors = [];\n    lines.forEach(function (raw, i) {\n      var line = raw.trim();\n      if (!line || line.charAt(0) === '#') return;\n      var parts = line.split(/[\\t,，\\s]+/).filter(Boolean);\n      if (parts.length < 2) { errors.push('第 ' + (i + 1) + ' 行格式错误：' + line); return; }\n      var name = parts[0], value = parts[1], pid = defPlat;\n      if (parts[2]) {\n        var key = String(parts[2]).toLowerCase();\n        if (ALIAS[key]) pid = ALIAS[key];\n        else if (byName[key]) pid = byName[key];\n      }\n      if (!pid) { errors.push('第 ' + (i + 1) + ' 行缺少平台：' + line); return; }\n      var person = DB.people.filter(function (p) { return p.name === name; })[0];\n      if (!person) {\n        person = { id: nextId(DB.people), name: name, group: defGroup, note: '' };\n        DB.people.push(person);\n        if (defGroup && DB.groups.indexOf(defGroup) < 0) DB.groups.push(defGroup);\n        made.people++;\n      }\n      DB.entries.push({\n        id: nextId(DB.entries), personId: person.id, platformId: pid,\n        kind: pid === 'link' ? 'link' : 'code', value: value,\n        type: parts[3] || '', url: parts[4] || '', note: '',\n      });\n      made.entries++;\n    });\n    commit();\n    var html = '<div class=\"tag\" style=\"background:rgba(40,199,111,.16);border-color:rgba(40,199,111,.5);color:var(--ok)\">新增成员 ' + made.people + ' 人，新增记录 ' + made.entries + ' 条<\/div>';\n    if (errors.length) html += '<div class=\"tiny\" style=\"margin-top:10px\">跳过 ' + errors.length + ' 行：<br>' + errors.slice(0, 20).map(esc).join('<br>') + '<\/div>';\n    $('#admBResult').innerHTML = html;\n    toast('导入完成', 'ok');\n  }\n\n  /* ---------------- 设置 ---------------- */\n  function loadSettings() {\n    $('#admSName').value = DB.settings.siteName || '';\n    $('#admSSub').value = DB.settings.subtitle || '';\n    $('#admSGroups').value = (DB.groups || []).join(', ');\n    $('#admSLogos').value = (DB.settings.logos || []).join(', ');\n    var fb = DB.settings.feedback || {};\n    $('#admFbTitle').value = fb.title || '';\n    $('#admFbDesc').value = fb.desc || '';\n    $('#admFbEnable').checked = fb.enableForm !== false;\n    renderContacts(DB.settings.contacts || []);\n  }\n\n  function renderContacts(list) {\n    $('#admCtList').innerHTML = list.map(function (c) {\n      return '<div class=\"ct-row\" style=\"display:grid;grid-template-columns:110px 1fr 150px auto;gap:8px\">' +\n        '<input class=\"input\" data-k=\"type\" value=\"' + esc(c.type || '') + '\" placeholder=\"微信\">' +\n        '<input class=\"input\" data-k=\"value\" value=\"' + esc(c.value || '') + '\" placeholder=\"wxid / QQ / 邮箱\">' +\n        '<input class=\"input\" data-k=\"label\" value=\"' + esc(c.label || '') + '\" placeholder=\"备注\">' +\n        '<button class=\"btn sm danger\" data-ctdel>删除<\/button><\/div>';\n    }).join('') || '<div class=\"tiny muted\">暂无联系方式<\/div>';\n    $$('#admCtList [data-ctdel]').forEach(function (b) { b.onclick = function () { b.closest('.ct-row').remove(); }; });\n  }\n\n  function readContacts() {\n    return $$('#admCtList .ct-row').map(function (r) {\n      return {\n        type: r.querySelector('[data-k=\"type\"]').value.trim(),\n        value: r.querySelector('[data-k=\"value\"]').value.trim(),\n        label: r.querySelector('[data-k=\"label\"]').value.trim(),\n      };\n    }).filter(function (c) { return c.value; });\n  }\n\n  /* ---------------- 导出 ---------------- */\n  function safeJson(o) { return JSON.stringify(o, null, 0).replace(/<\\//g, '<\\\\/'); }\n\n  function download(name, text) {\n    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });\n    var a = document.createElement('a');\n    a.href = URL.createObjectURL(blob);\n    a.download = name;\n    document.body.appendChild(a);\n    a.click();\n    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);\n  }\n\n  /**\n   * 重新生成完整的 index.html（与 tools/build_static.py 逻辑一致）\n   */\n  function buildIndex() {\n    if (!TPL.index || !TPL.css || !TPL.shim || !TPL.app) {\n      toast('页面缺少模板，请重新执行 build_static.py', 'err');\n      return null;\n    }\n    var db = clone(DB);\n    db.settings = clone(db.settings);\n    delete db.settings.adminUser; delete db.settings.adminSalt; delete db.settings.adminPassHash;\n    db.feedbacks = [];\n\n    var payload = safeJson(db);\n    var scripts =\n      '<script>window.__DATA__=' + payload + ';<\\/script>\\n' +\n      '<script>\\n' + TPL.shim + '\\n<\\/script>\\n' +\n      '<script>\\n' + TPL.app + '\\n<\\/script>\\n' +\n      '<script>window.__ADMIN_PASS__=' + JSON.stringify(PASS) + ';<\\/script>\\n' +\n      '<script>window.__TPL__=' + TPL.raw + ';<\\/script>\\n' +\n      '<script>\\n' + TPL.adminJs + '\\n<\\/script>\\n' +\n      '<script>\\n' + TPL.trigger + '\\n<\\/script>';\n\n    var html = TPL.index\n      .replace('<link rel=\"stylesheet\" href=\"/css/style.css\">', '<style>\\n' + TPL.css + '\\n<\/style>')\n      .replace('<script src=\"/js/app.js\"><\\/script>', scripts)\n      .replace(/\"\\/assets\\//g, '\"assets/')\n      .replace(/'\\/assets\\//g, \"'assets/\");\n\n    if (TPL.adminPartial) {\n      html = html.replace('<div id=\"toast\"><\/div>', TPL.adminPartial + '\\n<div id=\"toast\"><\/div>');\n    }\n    html = html.replace('<div id=\"toast\"><\/div>',\n      '<div class=\"tip-bar\" style=\"margin-top:16px\">当前为<b>静态版<\/b>：查询功能完整可用，数据快照由后台导出生成。<\/div>\\n<div id=\"toast\"><\/div>');\n    return html;\n  }\n\n  function exportIndex() {\n    var html = buildIndex();\n    if (!html) return;\n    download('index.html', html);\n    $('#admExpMsg').textContent = '已生成 index.html（' + (html.length / 1024).toFixed(0) + ' KB），覆盖仓库根目录后 push 即可。';\n    toast('index.html 已下载', 'ok');\n  }\n\n  function exportDb() {\n    download('db.json', JSON.stringify(DB, null, 1));\n    $('#admExpMsg').textContent = '已导出 db.json，覆盖仓库 data/db.json 后 push。';\n    toast('db.json 已下载', 'ok');\n  }\n\n  /* ---------------- 弹窗 ---------------- */\n  var okHandler = null;\n  function openModal(title, body, onOk) {\n    $('#admMTitle').textContent = title;\n    $('#admMBody').innerHTML = body;\n    okHandler = onOk;\n    $('#admMask').classList.add('on');\n    setTimeout(function () { var f = $('#admMBody').querySelector('input,select,textarea'); if (f) f.focus(); }, 50);\n  }\n  function closeModal() { $('#admMask').classList.remove('on'); okHandler = null; }\n  function confirmModal(title, text, onOk) {\n    openModal(title, '<div style=\"font-size:14px;line-height:1.7\">' + text + '<\/div>', function () {\n      closeModal(); onOk(); return false;\n    });\n  }\n\n  /* ---------------- 绑定 ---------------- */\n  function fillSelects() {\n    var plats = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });\n    $('#admEPlat').innerHTML = '<option value=\"\">全部平台<\/option>' + plats.map(function (p) {\n      return '<option value=\"' + esc(p.id) + '\">' + esc(p.name) + '<\/option>';\n    }).join('');\n    $('#admBPlat').innerHTML = plats.map(function (p) {\n      return '<option value=\"' + esc(p.id) + '\">' + esc(p.name) + '<\/option>';\n    }).join('');\n    var g = '<option value=\"\">全部分组<\/option>' + (DB.groups || []).map(function (x) {\n      return '<option value=\"' + esc(x) + '\">' + esc(x) + '<\/option>';\n    }).join('');\n    $('#admPGroup').innerHTML = g;\n    $('#admEGroup').innerHTML = g;\n  }\n\n  function setupLogos() {\n    var logos = (DB.settings.logos || []).map(function (u) { return String(u).replace(/^\\/?assets\\//, 'assets/'); });\n    var box = $('#admBrandLogoBox'), img = $('#admBrandLogo'), gb = $('#admGateLogo');\n    if (!logos.length) { if (box) box.textContent = '#'; if (gb) gb.textContent = '#'; return; }\n    if (img) {\n      img.src = logos[0];\n      img.onerror = function () { img.style.display = 'none'; box.textContent = '#'; };\n      img.onload = function () { img.style.display = 'block'; };\n      if (img.complete && img.naturalWidth) img.style.display = 'block';\n    }\n    if (gb) gb.innerHTML = '<img src=\"' + logos[0] + '\" style=\"width:100%;height:100%;object-fit:cover;border-radius:11px\">';\n  }\n\n  function bindAll() {\n    $('#admGateForm').addEventListener('submit', function (e) {\n      e.preventDefault();\n      if ($('#admGatePass').value !== PASS) { $('#admGateErr').textContent = '口令不对'; return; }\n      localStorage.setItem(OK_KEY, '1');\n      boot();\n    });\n    $('#admGateCancel').onclick = function (e) { e.preventDefault(); exitAdmin(); };\n\n    $('#admExit').onclick = exitAdmin;\n    $('#admHome').onclick = function (e) { e.preventDefault(); exitAdmin(); };\n\n    $$('#admTabs button').forEach(function (btn) {\n      btn.onclick = function () {\n        $$('#admTabs button').forEach(function (b) { b.classList.remove('on'); });\n        btn.classList.add('on');\n        $$('.panel').forEach(function (p) { p.classList.remove('on'); });\n        panel(btn.dataset.tab).classList.add('on');\n      };\n    });\n\n    $('#admPQ').addEventListener('input', renderPeople);\n    $('#admPGroup').onchange = renderPeople;\n    $('#admPAdd').onclick = function () { editPerson(null); };\n    $('#admEQ').addEventListener('input', renderEntries);\n    $('#admEPlat').onchange = renderEntries;\n    $('#admEGroup').onchange = renderEntries;\n    $('#admEAdd').onclick = function () { editEntry(null); };\n    $('#admBSubmit').onclick = bulk;\n\n    $('#admPlAdd').onclick = function () {\n      openModal('新增平台',\n        '<div class=\"form-grid\">' +\n        '<div class=\"form-row\"><label>名称 *<\/label><input class=\"input\" id=\"admPfName\" placeholder=\"例如 YouTube\"><\/div>' +\n        '<div class=\"form-row\"><label>标识（英文唯一）<\/label><input class=\"input\" id=\"admPfId\" placeholder=\"youtube\"><\/div><\/div>' +\n        '<div class=\"form-grid\">' +\n        '<div class=\"form-row\"><label>颜色<\/label><input class=\"input\" id=\"admPfColor\" type=\"color\" value=\"#7c5cff\" style=\"padding:4px;height:42px\"><\/div>' +\n        '<div class=\"form-row\"><label>排序<\/label><input class=\"input\" id=\"admPfOrder\" type=\"number\" value=\"' + (DB.platforms.length + 1) + '\"><\/div><\/div>' +\n        '<div class=\"err-text\" id=\"admFErr\"><\/div>',\n        function () {\n          var name = $('#admPfName').value.trim();\n          var id = $('#admPfId').value.trim() || ('p' + Math.random().toString(36).slice(2, 7));\n          if (!name) { $('#admFErr').textContent = '名称不能为空'; return false; }\n          if (DB.platforms.some(function (x) { return x.id === id; })) { $('#admFErr').textContent = '标识已存在'; return false; }\n          DB.platforms.push({ id: id, name: name, color: $('#admPfColor').value, icon: 'dot', order: Number($('#admPfOrder').value) });\n          closeModal(); commit(); toast('已新增', 'ok');\n          return false;\n        });\n    };\n\n    $('#admSSave').onclick = function () {\n      DB.settings.siteName = $('#admSName').value.trim() || DB.settings.siteName;\n      DB.settings.subtitle = $('#admSSub').value.trim();\n      DB.groups = $('#admSGroups').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);\n      var ls = $('#admSLogos').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);\n      if (ls.length) DB.settings.logos = ls;\n      commit(); setupLogos(); toast('已保存', 'ok');\n    };\n\n    $('#admCtAdd').onclick = function () {\n      var list = readContacts();\n      list.push({ type: '微信', value: '', label: '' });\n      renderContacts(list);\n      var rows = $$('#admCtList .ct-row');\n      if (rows.length) rows[rows.length - 1].querySelector('[data-k=\"value\"]').focus();\n    };\n\n    $('#admFbSave').onclick = function () {\n      DB.settings.feedback = {\n        title: $('#admFbTitle').value.trim() || '问题反馈',\n        desc: $('#admFbDesc').value.trim(),\n        enableForm: $('#admFbEnable').checked,\n      };\n      DB.settings.contacts = readContacts();\n      commit(); toast('已保存', 'ok');\n    };\n\n    $('#admExpIndex').onclick = exportIndex;\n    $('#admExpDb').onclick = exportDb;\n    $('#admImpDb').onclick = function () { $('#admImpFile').click(); };\n    $('#admImpFile').onchange = function () {\n      var f = this.files[0];\n      if (!f) return;\n      var rd = new FileReader();\n      rd.onload = function () {\n        try {\n          var d = JSON.parse(rd.result);\n          if (!Array.isArray(d.people) || !Array.isArray(d.entries)) throw new Error('格式不对');\n          DB = normalize(d); saveDraft(); syncFront();\n          fillSelects(); renderAll(); setupLogos();\n          toast('已导入 db.json', 'ok');\n        } catch (e) { toast('导入失败：' + e.message, 'err'); }\n      };\n      rd.readAsText(f);\n      this.value = '';\n    };\n\n    $('#admDropDraft').onclick = function () {\n      confirmModal('清除草稿', '将放弃本机未导出的全部改动，恢复到线上版本。确定？', function () {\n        localStorage.removeItem(DRAFT_KEY);\n        DB = normalize(clone(window.__DATA__ || {}));\n        $('#admDraftBar').style.display = 'none';\n        $('#admExpTime').textContent = '-';\n        fillSelects(); renderAll(); syncFront();\n        toast('已恢复线上版本', 'ok');\n      });\n    };\n\n    $('#admDraftDrop').onclick = function () {\n      localStorage.removeItem(DRAFT_KEY);\n      DB = normalize(clone(window.__DATA__ || {}));\n      $('#admDraftBar').style.display = 'none';\n      $('#admExpTime').textContent = '-';\n      fillSelects(); renderAll(); syncFront();\n      toast('已使用线上版本', 'ok');\n    };\n\n    $('#admMClose').onclick = closeModal;\n    $('#admMCancel').onclick = closeModal;\n    $('#admMask').addEventListener('mousedown', function (e) { if (e.target === $('#admMask')) closeModal(); });\n    $('#admMOk').onclick = function () { if (okHandler) okHandler(); };\n    document.addEventListener('keydown', function (e) {\n      if (e.key === 'Escape' && $('#admMask').classList.contains('on')) closeModal();\n      if (e.key === 'Enter' && $('#admMask').classList.contains('on') && e.target.tagName === 'INPUT') {\n        e.preventDefault(); if (okHandler) okHandler();\n      }\n    });\n  }\n})();\n", "trigger": "/**\n * 隐藏入口：连点前台 Logo 5 次唤出后台\n */\n(function () {\n  'use strict';\n  var box = document.getElementById('logoBox');\n  if (!box || !window.CHAdmin) return;\n\n  var n = 0, timer = null;\n\n  function hint(text) {\n    var box2 = document.getElementById('toast');\n    if (!box2) return;\n    var el = document.createElement('div');\n    el.className = 'toast-item';\n    el.style.fontSize = '13px';\n    el.textContent = text;\n    box2.appendChild(el);\n    setTimeout(function () {\n      el.style.transition = 'opacity .25s';\n      el.style.opacity = '0';\n      setTimeout(function () { el.remove(); }, 260);\n    }, 1200);\n  }\n\n  function reset() { n = 0; clearTimeout(timer); }\n\n  box.style.cursor = 'pointer';\n  box.addEventListener('click', function (e) {\n    e.preventDefault();\n    e.stopPropagation();\n    n++;\n    clearTimeout(timer);\n    timer = setTimeout(reset, 2500);\n    box.style.transform = 'scale(0.88)';\n    setTimeout(function () { box.style.transform = ''; }, 130);\n    if (n >= 5) {\n      reset();\n      window.CHAdmin.open();\n    } else if (n >= 3) {\n      hint('再点 ' + (5 - n) + ' 次进入后台');\n    }\n  });\n})();\n"};</script>
+<script>
+/**
+ * CipherHub 内置后台（单页版）
+ *
+ * 作为片段内嵌在 index.html 里，默认隐藏。
+ * 触发方式：连点前台 Logo 5 次 → 口令 → 进入后台（同一页面，不跳转）。
+ *
+ * 数据来自 window.__DATA__；改动会：
+ *   1) 立刻通过 window.__CH_SET_DATA__ 同步给前台（本页即时生效）
+ *   2) 自动存本机 localStorage 草稿
+ *   3) 通过「导出发布」生成新的 index.html / db.json，push 后对所有人生效
+ */
+(function () {
+  'use strict';
+
+  var DRAFT_KEY = 'ch_admin_draft';
+  var OK_KEY = 'ch_admin_ok';
+  var PASS = window.__ADMIN_PASS__ || 'admin123';
+  var TPL = window.__TPL__ || {};
+
+  var DB = null;
+  var peopleCache = [], entryCache = [];
+  var mounted = false;
+
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function panel(n) { return $('#adm-panel-' + n); }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function toast(msg, type) {
+    var box = $('#admToast');
+    if (!box) return;
+    var el = document.createElement('div');
+    el.className = 'toast-item ' + (type || '');
+    el.textContent = msg;
+    box.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = 'opacity .25s';
+      el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 260);
+    }, 2000);
+  }
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function nextId(arr) {
+    var m = 0;
+    (arr || []).forEach(function (x) { if (typeof x.id === 'number' && x.id > m) m = x.id; });
+    return m + 1;
+  }
+
+  function normalize(db) {
+    db = db || {};
+    db.platforms = db.platforms || [];
+    db.groups = db.groups || [];
+    db.people = db.people || [];
+    db.entries = db.entries || [];
+    db.settings = db.settings || {};
+    if (!db.settings.logos || !db.settings.logos.length) db.settings.logos = ['assets/Laya.png', 'assets/Laya2.png'];
+    if (!db.settings.feedback) db.settings.feedback = { title: '问题反馈', desc: '', enableForm: true };
+    if (!Array.isArray(db.settings.contacts)) db.settings.contacts = [];
+    return db;
+  }
+
+  /* ---------------- 草稿 ---------------- */
+  function saveDraft() {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), db: DB })); }
+    catch (e) { toast('本机存储空间不足，请及时导出', 'err'); }
+    var t = $('#admExpTime');
+    if (t) t.textContent = new Date().toLocaleString('zh-CN');
+  }
+
+  function loadDraft() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function syncFront() {
+    if (window.__CH_SET_DATA__) { try { window.__CH_SET_DATA__(DB); } catch (e) {} }
+    if (window.__CH_REFRESH__) { try { window.__CH_REFRESH__(); } catch (e) {} }
+  }
+
+  /* ---------------- 显示 / 隐藏 ---------------- */
+  function showGate() {
+    $('#admGate').style.display = 'grid';
+    $('#admRoot').style.display = 'none';
+    document.body.classList.add('adm-on');
+    setTimeout(function () { var p = $('#admGatePass'); if (p) p.focus(); }, 60);
+  }
+
+  function showAdmin() {
+    $('#admGate').style.display = 'none';
+    $('#admRoot').style.display = 'block';
+    document.body.classList.add('adm-on');
+    window.scrollTo(0, 0);
+  }
+
+  function exitAdmin() {
+    document.body.classList.remove('adm-on');
+    $('#admRoot').style.display = 'none';
+    $('#admGate').style.display = 'none';
+    syncFront();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------- 进入流程 ---------------- */
+  function boot() {
+    if (mounted) { showAdmin(); return; }
+    mounted = true;
+
+    var draft = loadDraft();
+    if (draft && draft.db) {
+      DB = normalize(draft.db);
+      $('#admDraftBar').style.display = '';
+      $('#admDraftTime').textContent = new Date(draft.at).toLocaleString('zh-CN');
+    } else {
+      DB = normalize(clone(window.__DATA__ || {}));
+    }
+    $('#admExpTime').textContent = draft ? new Date(draft.at).toLocaleString('zh-CN') : '-';
+
+    fillSelects();
+    renderAll();
+    bindAll();
+    setupLogos();
+    showAdmin();
+  }
+
+  window.CHAdmin = {
+    open: function () {
+      if (!PASS) { localStorage.setItem(OK_KEY, '1'); boot(); return; }
+      if (localStorage.getItem(OK_KEY) === '1') { boot(); return; }
+      showGate();
+    },
+    isOpen: function () { return document.body.classList.contains('adm-on'); },
+  };
+
+  /* ---------------- 渲染 ---------------- */
+  function pmap() { var m = {}; DB.platforms.forEach(function (p) { m[p.id] = p; }); return m; }
+  function pemap() { var m = {}; DB.people.forEach(function (p) { m[p.id] = p; }); return m; }
+
+  function stats() {
+    var c = {};
+    DB.platforms.forEach(function (p) { c[p.id] = 0; });
+    DB.entries.forEach(function (e) { if (c[e.platformId] === undefined) c[e.platformId] = 0; c[e.platformId]++; });
+    return { people: DB.people.length, entries: DB.entries.length, platforms: DB.platforms.length, byPlatform: c };
+  }
+
+  function renderAll() { renderDash(); renderPeople(); renderEntries(); renderPlatforms(); loadSettings(); }
+
+  function renderDash() {
+    var s = stats();
+    var cards = [
+      { n: s.people, t: '成员' }, { n: s.entries, t: '暗号 / 短链' },
+      { n: s.platforms, t: '平台' }, { n: DB.groups.length, t: '分组' },
+    ];
+    var html = cards.map(function (c) {
+      return '<div class="box"><b>' + c.n + '</b><span>' + c.t + '</span></div>';
+    }).join('');
+    $('#admDashStats').innerHTML = html;
+    $('#admExpStats').innerHTML = html;
+
+    var plats = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });
+    var max = 1;
+    plats.forEach(function (p) { if ((s.byPlatform[p.id] || 0) > max) max = s.byPlatform[p.id]; });
+    $('#admDashPlat').innerHTML = plats.map(function (p) {
+      var n = s.byPlatform[p.id] || 0;
+      return '<tr><td style="width:120px"><span class="tag"><span style="width:8px;height:8px;border-radius:50%;background:' + esc(p.color) + ';display:inline-block"></span>' + esc(p.name) + '</span></td>' +
+        '<td><div style="height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:' + (max ? (n / max * 100) : 0).toFixed(1) + '%;background:' + esc(p.color) + '"></div></div></td>' +
+        '<td style="width:70px;text-align:right" class="mono">' + n + '</td></tr>';
+    }).join('');
+  }
+
+  function renderPeople() {
+    var q = $('#admPQ').value.trim().toLowerCase();
+    var g = $('#admPGroup').value;
+    var list = DB.people.filter(function (p) {
+      if (q && String(p.name).toLowerCase().indexOf(q) < 0) return false;
+      if (g && String(p.group || '').indexOf(g) < 0) return false;
+      return true;
+    }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'zh'); });
+    peopleCache = list;
+    $('#admPCount').textContent = '共 ' + list.length + ' 人';
+    $('#admPBody').innerHTML = list.map(function (p) {
+      var cnt = DB.entries.filter(function (e) { return e.personId === p.id; }).length;
+      return '<tr><td class="mono muted">' + p.id + '</td><td><b>' + esc(p.name) + '</b></td>' +
+        '<td class="muted">' + esc(p.group || '-') + '</td><td class="mono">' + cnt + '</td>' +
+        '<td><div class="ops"><button class="btn sm" data-edit="' + p.id + '">编辑</button>' +
+        '<button class="btn sm danger" data-del="' + p.id + '">删除</button></div></td></tr>';
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-mute);padding:26px">暂无成员</td></tr>';
+    $$('#admPBody [data-edit]').forEach(function (b) { b.onclick = function () { editPerson(Number(b.dataset.edit)); }; });
+    $$('#admPBody [data-del]').forEach(function (b) { b.onclick = function () { delPerson(Number(b.dataset.del)); }; });
+  }
+
+  function renderEntries() {
+    var q = $('#admEQ').value.trim().toLowerCase();
+    var pf = $('#admEPlat').value, g = $('#admEGroup').value;
+    var pe = pemap(), pm = pmap();
+    var list = DB.entries.filter(function (e) {
+      if (pf && e.platformId !== pf) return false;
+      var p = pe[e.personId];
+      if (g && (!p || String(p.group || '').indexOf(g) < 0)) return false;
+      if (q) {
+        var v = String(e.value || '').toLowerCase();
+        if (v.indexOf(q) < 0 && (!p || String(p.name).toLowerCase().indexOf(q) < 0)) return false;
+      }
+      return true;
+    }).sort(function (a, b) { return b.id - a.id; });
+    entryCache = list;
+    $('#admECount').textContent = '显示 ' + Math.min(list.length, 400) + ' 条 / 共 ' + DB.entries.length + ' 条';
+    $('#admEBody').innerHTML = list.slice(0, 400).map(function (e) {
+      var p = pe[e.personId] || {}, pl = pm[e.platformId] || {};
+      return '<tr><td class="mono muted">' + e.id + '</td>' +
+        '<td>' + esc(p.name || '-') + '</td>' +
+        '<td><span class="tag"><span style="width:8px;height:8px;border-radius:50%;background:' + esc(pl.color || '#7c5cff') + ';display:inline-block"></span>' + esc(pl.name || e.platformId) + '</span></td>' +
+        '<td class="mono">' + esc(e.value) + '</td>' +
+        '<td class="tiny muted">' + esc(e.type || '-') + '</td>' +
+        '<td class="tiny muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (e.url ? esc(e.url) : '-') + '</td>' +
+        '<td><div class="ops"><button class="btn sm" data-edit="' + e.id + '">编辑</button>' +
+        '<button class="btn sm danger" data-del="' + e.id + '">删除</button></div></td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-mute);padding:26px">暂无记录</td></tr>';
+    $$('#admEBody [data-edit]').forEach(function (b) { b.onclick = function () { editEntry(Number(b.dataset.edit)); }; });
+    $$('#admEBody [data-del]').forEach(function (b) { b.onclick = function () { delEntry(Number(b.dataset.del)); }; });
+  }
+
+  function renderPlatforms() {
+    var s = stats();
+    var list = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });
+    $('#admPlList').innerHTML = list.map(function (p) {
+      return '<div class="row" data-id="' + esc(p.id) + '">' +
+        '<input class="input" data-k="name" value="' + esc(p.name) + '" placeholder="名称">' +
+        '<input class="input" data-k="id" value="' + esc(p.id) + '" placeholder="标识">' +
+        '<input class="input" data-k="color" type="color" value="' + esc(p.color || '#7c5cff') + '" style="padding:4px;height:42px">' +
+        '<input class="input" data-k="order" type="number" value="' + (p.order || 0) + '" placeholder="排序">' +
+        '<div style="display:flex;gap:6px"><button class="btn sm" data-save="' + esc(p.id) + '">保存</button>' +
+        '<button class="btn sm danger" data-del="' + esc(p.id) + '"' + ((s.byPlatform[p.id] || 0) > 0 ? ' disabled title="仍有记录占用"' : '') + '>删除</button></div></div>';
+    }).join('');
+    $$('#admPlList [data-save]').forEach(function (b) {
+      b.onclick = function () {
+        var row = b.closest('.row');
+        var get = function (k) { return row.querySelector('[data-k="' + k + '"]').value.trim(); };
+        var old = DB.platforms.filter(function (x) { return x.id === b.dataset.save; })[0];
+        var nid = get('id');
+        if (!get('name')) { toast('名称不能为空', 'err'); return; }
+        if (nid !== old.id) {
+          if (DB.platforms.some(function (x) { return x.id === nid; })) { toast('标识已存在', 'err'); return; }
+          DB.entries.forEach(function (e) { if (e.platformId === old.id) e.platformId = nid; });
+        }
+        old.id = nid; old.name = get('name'); old.color = get('color'); old.order = Number(get('order'));
+        commit(); toast('已保存', 'ok');
+      };
+    });
+    $$('#admPlList [data-del]').forEach(function (b) {
+      b.onclick = function () {
+        DB.platforms = DB.platforms.filter(function (x) { return x.id !== b.dataset.del; });
+        commit(); toast('已删除', 'ok');
+      };
+    });
+  }
+
+  function commit() {
+    saveDraft();
+    syncFront();
+    renderDash(); renderPeople(); renderEntries(); renderPlatforms(); loadSettings();
+  }
+
+  /* ---------------- 增删改 ---------------- */
+  function editPerson(id) {
+    var p = id ? peopleCache.filter(function (x) { return x.id === id; })[0] : null;
+    openModal(id ? '编辑成员' : '新增成员',
+      '<div class="form-row"><label>姓名 *</label><input class="input" id="admFName" value="' + esc(p ? p.name : '') + '"></div>' +
+      '<div class="form-row"><label>分组</label><input class="input" id="admFGroup" value="' + esc(p ? p.group : '') + '" placeholder="例如 Laya"></div>' +
+      '<div class="err-text" id="admFErr"></div>',
+      function () {
+        var name = $('#admFName').value.trim(), group = $('#admFGroup').value.trim();
+        if (!name) { $('#admFErr').textContent = '姓名不能为空'; return false; }
+        if (DB.people.some(function (x) { return x.name === name && x.id !== id; })) { $('#admFErr').textContent = '已有同名成员'; return false; }
+        if (p) { p.name = name; p.group = group; }
+        else DB.people.push({ id: nextId(DB.people), name: name, group: group, note: '' });
+        if (group && DB.groups.indexOf(group) < 0) DB.groups.push(group);
+        closeModal(); commit(); toast('已保存', 'ok');
+        return false;
+      });
+  }
+
+  function delPerson(id) {
+    var p = peopleCache.filter(function (x) { return x.id === id; })[0];
+    var cnt = DB.entries.filter(function (e) { return e.personId === id; }).length;
+    confirmModal('删除成员', '确定删除「' + esc(p ? p.name : id) + '」？其下 ' + cnt + ' 条记录也会一并删除。', function () {
+      DB.people = DB.people.filter(function (x) { return x.id !== id; });
+      DB.entries = DB.entries.filter(function (e) { return e.personId !== id; });
+      commit(); toast('已删除', 'ok');
+    });
+  }
+
+  function editEntry(id) {
+    if (!DB.people.length) { toast('请先新增成员', 'err'); return; }
+    var e = id ? entryCache.filter(function (x) { return x.id === id; })[0] : null;
+    var po = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); }).map(function (p) {
+      return '<option value="' + esc(p.id) + '"' + (e && e.platformId === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    }).join('');
+    var pe = DB.people.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'zh'); }).map(function (p) {
+      return '<option value="' + p.id + '"' + (e && e.personId === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    }).join('');
+    openModal(id ? '编辑记录' : '新增记录',
+      '<div class="form-grid">' +
+      '<div class="form-row"><label>成员 *</label><select class="select" id="admFPerson">' + pe + '</select></div>' +
+      '<div class="form-row"><label>平台 *</label><select class="select" id="admFPlat">' + po + '</select></div></div>' +
+      '<div class="form-row"><label>暗号 / 短链 *</label><input class="input" id="admFValue" value="' + esc(e ? e.value : '') + '"></div>' +
+      '<div class="form-grid">' +
+      '<div class="form-row"><label>记录类型</label><select class="select" id="admFKind">' +
+      '<option value="code"' + (!e || e.kind === 'code' ? ' selected' : '') + '>暗号</option>' +
+      '<option value="link"' + (e && e.kind === 'link' ? ' selected' : '') + '>短链</option></select></div>' +
+      '<div class="form-row"><label>内容类型</label><input class="input" id="admFType" value="' + esc(e ? e.type : '') + '" placeholder="图文 / 视频"></div></div>' +
+      '<div class="form-row"><label>链接地址</label><input class="input" id="admFUrl" value="' + esc(e ? e.url : '') + '" placeholder="https://..."></div>' +
+      '<div class="err-text" id="admFErr"></div>',
+      function () {
+        var v = $('#admFValue').value.trim();
+        if (!v) { $('#admFErr').textContent = '暗号 / 短链不能为空'; return false; }
+        var data = {
+          personId: Number($('#admFPerson').value), platformId: $('#admFPlat').value,
+          kind: $('#admFKind').value, value: v, type: $('#admFType').value.trim(), url: $('#admFUrl').value.trim(),
+        };
+        if (e) { Object.keys(data).forEach(function (k) { e[k] = data[k]; }); }
+        else { data.id = nextId(DB.entries); data.note = ''; DB.entries.push(data); }
+        closeModal(); commit(); toast('已保存', 'ok');
+        return false;
+      });
+  }
+
+  function delEntry(id) {
+    var e = entryCache.filter(function (x) { return x.id === id; })[0];
+    confirmModal('删除记录', '确定删除「' + esc(e ? e.value : id) + '」？', function () {
+      DB.entries = DB.entries.filter(function (x) { return x.id !== id; });
+      commit(); toast('已删除', 'ok');
+    });
+  }
+
+  /* ---------------- 批量导入 ---------------- */
+  var ALIAS = {
+    threads: 'threads', thareads: 'threads', thresds: 'threads',
+    ins: 'instagram', instagram: 'instagram', ig: 'instagram',
+    tik: 'tiktok', tiktok: 'tiktok', tk: 'tiktok',
+    x: 'x', twitter: 'x', fb: 'facebook', facebook: 'facebook',
+    视频: 'video', video: 'video', sp: 'video',
+    短链: 'link', link: 'link', 图文: 'image', image: 'image', tw: 'image',
+  };
+
+  function bulk() {
+    var lines = $('#admBText').value.split(/\r?\n/);
+    var defPlat = $('#admBPlat').value, defGroup = $('#admBGroup').value.trim();
+    var byName = {};
+    DB.platforms.forEach(function (p) { byName[p.name.toLowerCase()] = p.id; });
+    var made = { people: 0, entries: 0 }, errors = [];
+    lines.forEach(function (raw, i) {
+      var line = raw.trim();
+      if (!line || line.charAt(0) === '#') return;
+      var parts = line.split(/[\t,，\s]+/).filter(Boolean);
+      if (parts.length < 2) { errors.push('第 ' + (i + 1) + ' 行格式错误：' + line); return; }
+      var name = parts[0], value = parts[1], pid = defPlat;
+      if (parts[2]) {
+        var key = String(parts[2]).toLowerCase();
+        if (ALIAS[key]) pid = ALIAS[key];
+        else if (byName[key]) pid = byName[key];
+      }
+      if (!pid) { errors.push('第 ' + (i + 1) + ' 行缺少平台：' + line); return; }
+      var person = DB.people.filter(function (p) { return p.name === name; })[0];
+      if (!person) {
+        person = { id: nextId(DB.people), name: name, group: defGroup, note: '' };
+        DB.people.push(person);
+        if (defGroup && DB.groups.indexOf(defGroup) < 0) DB.groups.push(defGroup);
+        made.people++;
+      }
+      DB.entries.push({
+        id: nextId(DB.entries), personId: person.id, platformId: pid,
+        kind: pid === 'link' ? 'link' : 'code', value: value,
+        type: parts[3] || '', url: parts[4] || '', note: '',
+      });
+      made.entries++;
+    });
+    commit();
+    var html = '<div class="tag" style="background:rgba(40,199,111,.16);border-color:rgba(40,199,111,.5);color:var(--ok)">新增成员 ' + made.people + ' 人，新增记录 ' + made.entries + ' 条</div>';
+    if (errors.length) html += '<div class="tiny" style="margin-top:10px">跳过 ' + errors.length + ' 行：<br>' + errors.slice(0, 20).map(esc).join('<br>') + '</div>';
+    $('#admBResult').innerHTML = html;
+    toast('导入完成', 'ok');
+  }
+
+  /* ---------------- 设置 ---------------- */
+  function loadSettings() {
+    $('#admSName').value = DB.settings.siteName || '';
+    $('#admSSub').value = DB.settings.subtitle || '';
+    $('#admSGroups').value = (DB.groups || []).join(', ');
+    $('#admSLogos').value = (DB.settings.logos || []).join(', ');
+    var fb = DB.settings.feedback || {};
+    $('#admFbTitle').value = fb.title || '';
+    $('#admFbDesc').value = fb.desc || '';
+    $('#admFbEnable').checked = fb.enableForm !== false;
+    renderContacts(DB.settings.contacts || []);
+  }
+
+  function renderContacts(list) {
+    $('#admCtList').innerHTML = list.map(function (c) {
+      return '<div class="ct-row" style="display:grid;grid-template-columns:110px 1fr 150px auto;gap:8px">' +
+        '<input class="input" data-k="type" value="' + esc(c.type || '') + '" placeholder="微信">' +
+        '<input class="input" data-k="value" value="' + esc(c.value || '') + '" placeholder="wxid / QQ / 邮箱">' +
+        '<input class="input" data-k="label" value="' + esc(c.label || '') + '" placeholder="备注">' +
+        '<button class="btn sm danger" data-ctdel>删除</button></div>';
+    }).join('') || '<div class="tiny muted">暂无联系方式</div>';
+    $$('#admCtList [data-ctdel]').forEach(function (b) { b.onclick = function () { b.closest('.ct-row').remove(); }; });
+  }
+
+  function readContacts() {
+    return $$('#admCtList .ct-row').map(function (r) {
+      return {
+        type: r.querySelector('[data-k="type"]').value.trim(),
+        value: r.querySelector('[data-k="value"]').value.trim(),
+        label: r.querySelector('[data-k="label"]').value.trim(),
+      };
+    }).filter(function (c) { return c.value; });
+  }
+
+  /* ---------------- 导出 ---------------- */
+  function safeJson(o) { return JSON.stringify(o, null, 0).replace(/<\//g, '<\\/'); }
+
+  function download(name, text) {
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  /**
+   * 重新生成完整的 index.html（与 tools/build_static.py 逻辑一致）
+   */
+  function buildIndex() {
+    if (!TPL.index || !TPL.css || !TPL.shim || !TPL.app) {
+      toast('页面缺少模板，请重新执行 build_static.py', 'err');
+      return null;
+    }
+    var db = clone(DB);
+    db.settings = clone(db.settings);
+    delete db.settings.adminUser; delete db.settings.adminSalt; delete db.settings.adminPassHash;
+    db.feedbacks = [];
+
+    var payload = safeJson(db);
+    var scripts =
+      '<script>window.__DATA__=' + payload + ';<\/script>\n' +
+      '<script>\n' + TPL.shim + '\n<\/script>\n' +
+      '<script>\n' + TPL.app + '\n<\/script>\n' +
+      '<script>window.__ADMIN_PASS__=' + JSON.stringify(PASS) + ';<\/script>\n' +
+      '<script>window.__TPL__=' + TPL.raw + ';<\/script>\n' +
+      '<script>\n' + TPL.adminJs + '\n<\/script>\n' +
+      '<script>\n' + TPL.trigger + '\n<\/script>';
+
+    var html = TPL.index
+      .replace('<link rel="stylesheet" href="/css/style.css">', '<style>\n' + TPL.css + '\n</style>')
+      .replace('<script src="/js/app.js"><\/script>', scripts)
+      .replace(/"\/assets\//g, '"assets/')
+      .replace(/'\/assets\//g, "'assets/");
+
+    if (TPL.adminPartial) {
+      html = html.replace('<div id="toast"></div>', TPL.adminPartial + '\n<div id="toast"></div>');
+    }
+    html = html.replace('<div id="toast"></div>',
+      '<div class="tip-bar" style="margin-top:16px">当前为<b>静态版</b>：查询功能完整可用，数据快照由后台导出生成。</div>\n<div id="toast"></div>');
+    return html;
+  }
+
+  function exportIndex() {
+    var html = buildIndex();
+    if (!html) return;
+    download('index.html', html);
+    $('#admExpMsg').textContent = '已生成 index.html（' + (html.length / 1024).toFixed(0) + ' KB），覆盖仓库根目录后 push 即可。';
+    toast('index.html 已下载', 'ok');
+  }
+
+  function exportDb() {
+    download('db.json', JSON.stringify(DB, null, 1));
+    $('#admExpMsg').textContent = '已导出 db.json，覆盖仓库 data/db.json 后 push。';
+    toast('db.json 已下载', 'ok');
+  }
+
+  /* ---------------- 弹窗 ---------------- */
+  var okHandler = null;
+  function openModal(title, body, onOk) {
+    $('#admMTitle').textContent = title;
+    $('#admMBody').innerHTML = body;
+    okHandler = onOk;
+    $('#admMask').classList.add('on');
+    setTimeout(function () { var f = $('#admMBody').querySelector('input,select,textarea'); if (f) f.focus(); }, 50);
+  }
+  function closeModal() { $('#admMask').classList.remove('on'); okHandler = null; }
+  function confirmModal(title, text, onOk) {
+    openModal(title, '<div style="font-size:14px;line-height:1.7">' + text + '</div>', function () {
+      closeModal(); onOk(); return false;
+    });
+  }
+
+  /* ---------------- 绑定 ---------------- */
+  function fillSelects() {
+    var plats = DB.platforms.slice().sort(function (a, b) { return (a.order || 99) - (b.order || 99); });
+    $('#admEPlat').innerHTML = '<option value="">全部平台</option>' + plats.map(function (p) {
+      return '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>';
+    }).join('');
+    $('#admBPlat').innerHTML = plats.map(function (p) {
+      return '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>';
+    }).join('');
+    var g = '<option value="">全部分组</option>' + (DB.groups || []).map(function (x) {
+      return '<option value="' + esc(x) + '">' + esc(x) + '</option>';
+    }).join('');
+    $('#admPGroup').innerHTML = g;
+    $('#admEGroup').innerHTML = g;
+  }
+
+  function setupLogos() {
+    var logos = (DB.settings.logos || []).map(function (u) { return String(u).replace(/^\/?assets\//, 'assets/'); });
+    var box = $('#admBrandLogoBox'), img = $('#admBrandLogo'), gb = $('#admGateLogo');
+    if (!logos.length) { if (box) box.textContent = '#'; if (gb) gb.textContent = '#'; return; }
+    if (img) {
+      img.src = logos[0];
+      img.onerror = function () { img.style.display = 'none'; box.textContent = '#'; };
+      img.onload = function () { img.style.display = 'block'; };
+      if (img.complete && img.naturalWidth) img.style.display = 'block';
+    }
+    if (gb) gb.innerHTML = '<img src="' + logos[0] + '" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
+  }
+
+  function bindAll() {
+    $('#admGateForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if ($('#admGatePass').value !== PASS) { $('#admGateErr').textContent = '口令不对'; return; }
+      localStorage.setItem(OK_KEY, '1');
+      boot();
+    });
+    $('#admGateCancel').onclick = function (e) { e.preventDefault(); exitAdmin(); };
+
+    $('#admExit').onclick = exitAdmin;
+    $('#admHome').onclick = function (e) { e.preventDefault(); exitAdmin(); };
+
+    $$('#admTabs button').forEach(function (btn) {
+      btn.onclick = function () {
+        $$('#admTabs button').forEach(function (b) { b.classList.remove('on'); });
+        btn.classList.add('on');
+        $$('.panel').forEach(function (p) { p.classList.remove('on'); });
+        panel(btn.dataset.tab).classList.add('on');
+      };
+    });
+
+    $('#admPQ').addEventListener('input', renderPeople);
+    $('#admPGroup').onchange = renderPeople;
+    $('#admPAdd').onclick = function () { editPerson(null); };
+    $('#admEQ').addEventListener('input', renderEntries);
+    $('#admEPlat').onchange = renderEntries;
+    $('#admEGroup').onchange = renderEntries;
+    $('#admEAdd').onclick = function () { editEntry(null); };
+    $('#admBSubmit').onclick = bulk;
+
+    $('#admPlAdd').onclick = function () {
+      openModal('新增平台',
+        '<div class="form-grid">' +
+        '<div class="form-row"><label>名称 *</label><input class="input" id="admPfName" placeholder="例如 YouTube"></div>' +
+        '<div class="form-row"><label>标识（英文唯一）</label><input class="input" id="admPfId" placeholder="youtube"></div></div>' +
+        '<div class="form-grid">' +
+        '<div class="form-row"><label>颜色</label><input class="input" id="admPfColor" type="color" value="#7c5cff" style="padding:4px;height:42px"></div>' +
+        '<div class="form-row"><label>排序</label><input class="input" id="admPfOrder" type="number" value="' + (DB.platforms.length + 1) + '"></div></div>' +
+        '<div class="err-text" id="admFErr"></div>',
+        function () {
+          var name = $('#admPfName').value.trim();
+          var id = $('#admPfId').value.trim() || ('p' + Math.random().toString(36).slice(2, 7));
+          if (!name) { $('#admFErr').textContent = '名称不能为空'; return false; }
+          if (DB.platforms.some(function (x) { return x.id === id; })) { $('#admFErr').textContent = '标识已存在'; return false; }
+          DB.platforms.push({ id: id, name: name, color: $('#admPfColor').value, icon: 'dot', order: Number($('#admPfOrder').value) });
+          closeModal(); commit(); toast('已新增', 'ok');
+          return false;
+        });
+    };
+
+    $('#admSSave').onclick = function () {
+      DB.settings.siteName = $('#admSName').value.trim() || DB.settings.siteName;
+      DB.settings.subtitle = $('#admSSub').value.trim();
+      DB.groups = $('#admSGroups').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+      var ls = $('#admSLogos').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+      if (ls.length) DB.settings.logos = ls;
+      commit(); setupLogos(); toast('已保存', 'ok');
+    };
+
+    $('#admCtAdd').onclick = function () {
+      var list = readContacts();
+      list.push({ type: '微信', value: '', label: '' });
+      renderContacts(list);
+      var rows = $$('#admCtList .ct-row');
+      if (rows.length) rows[rows.length - 1].querySelector('[data-k="value"]').focus();
+    };
+
+    $('#admFbSave').onclick = function () {
+      DB.settings.feedback = {
+        title: $('#admFbTitle').value.trim() || '问题反馈',
+        desc: $('#admFbDesc').value.trim(),
+        enableForm: $('#admFbEnable').checked,
+      };
+      DB.settings.contacts = readContacts();
+      commit(); toast('已保存', 'ok');
+    };
+
+    $('#admExpIndex').onclick = exportIndex;
+    $('#admExpDb').onclick = exportDb;
+    $('#admImpDb').onclick = function () { $('#admImpFile').click(); };
+    $('#admImpFile').onchange = function () {
+      var f = this.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var d = JSON.parse(rd.result);
+          if (!Array.isArray(d.people) || !Array.isArray(d.entries)) throw new Error('格式不对');
+          DB = normalize(d); saveDraft(); syncFront();
+          fillSelects(); renderAll(); setupLogos();
+          toast('已导入 db.json', 'ok');
+        } catch (e) { toast('导入失败：' + e.message, 'err'); }
+      };
+      rd.readAsText(f);
+      this.value = '';
+    };
+
+    $('#admDropDraft').onclick = function () {
+      confirmModal('清除草稿', '将放弃本机未导出的全部改动，恢复到线上版本。确定？', function () {
+        localStorage.removeItem(DRAFT_KEY);
+        DB = normalize(clone(window.__DATA__ || {}));
+        $('#admDraftBar').style.display = 'none';
+        $('#admExpTime').textContent = '-';
+        fillSelects(); renderAll(); syncFront();
+        toast('已恢复线上版本', 'ok');
+      });
+    };
+
+    $('#admDraftDrop').onclick = function () {
+      localStorage.removeItem(DRAFT_KEY);
+      DB = normalize(clone(window.__DATA__ || {}));
+      $('#admDraftBar').style.display = 'none';
+      $('#admExpTime').textContent = '-';
+      fillSelects(); renderAll(); syncFront();
+      toast('已使用线上版本', 'ok');
+    };
+
+    $('#admMClose').onclick = closeModal;
+    $('#admMCancel').onclick = closeModal;
+    $('#admMask').addEventListener('mousedown', function (e) { if (e.target === $('#admMask')) closeModal(); });
+    $('#admMOk').onclick = function () { if (okHandler) okHandler(); };
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && $('#admMask').classList.contains('on')) closeModal();
+      if (e.key === 'Enter' && $('#admMask').classList.contains('on') && e.target.tagName === 'INPUT') {
+        e.preventDefault(); if (okHandler) okHandler();
+      }
+    });
+  }
+})();
+
+</script>
+<script>
+/**
+ * 隐藏入口：连点前台 Logo 5 次唤出后台
+ */
+(function () {
+  'use strict';
+  var box = document.getElementById('logoBox');
+  if (!box || !window.CHAdmin) return;
+
+  var n = 0, timer = null;
+
+  function hint(text) {
+    var box2 = document.getElementById('toast');
+    if (!box2) return;
+    var el = document.createElement('div');
+    el.className = 'toast-item';
+    el.style.fontSize = '13px';
+    el.textContent = text;
+    box2.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = 'opacity .25s';
+      el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 260);
+    }, 1200);
+  }
+
+  function reset() { n = 0; clearTimeout(timer); }
+
+  box.style.cursor = 'pointer';
+  box.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    n++;
+    clearTimeout(timer);
+    timer = setTimeout(reset, 2500);
+    box.style.transform = 'scale(0.88)';
+    setTimeout(function () { box.style.transform = ''; }, 130);
+    if (n >= 5) {
+      reset();
+      window.CHAdmin.open();
+    } else if (n >= 3) {
+      hint('再点 ' + (5 - n) + ' 次进入后台');
+    }
   });
 })();
 

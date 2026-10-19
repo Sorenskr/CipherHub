@@ -83,15 +83,21 @@ feedbacks : [{ id, name, contact, message, status, createdAt }]
 settings  : { siteName, subtitle, logos[], feedback{title,desc,enableForm}, contacts[] }
 ```
 
-## 网页版离线后台（GitHub Pages 专用）
+## 内置后台（单页，隐藏入口）
 
-根目录 `admin.html` 是一个**纯静态后台**，无需服务器，直接在 Pages 上打开：
+前台与后台在**同一个 `index.html`** 里，没有第二个页面。
 
+**打开方式：在首页连点左上角 Logo 5 次 → 输口令 → 后台在当前页展开**（第 3 次点击起会有「再点 N 次」提示，2.5 秒内不继续点击会重置）。
+
+口令默认 `admin123`，生成时可改：
+
+```bash
+python tools/build_static.py                  # 默认口令 admin123
+python tools/build_static.py --admin-pass 你的口令
+python tools/build_static.py --no-pass        # 不要口令，点 5 次直接进
 ```
-https://<你的用户名>.github.io/CipherHub/admin.html
-```
 
-口令默认 `admin123`（生成时用 `python tools/build_static.py --admin-pass 你的口令` 修改）。
+后台改动会**立刻在本页生效**（前台查询结果同步刷新），并自动存本机草稿；换设备后仍以线上快照为准，所以正式发布需要导出。
 
 **发布流程：**
 
@@ -103,7 +109,9 @@ https://<你的用户名>.github.io/CipherHub/admin.html
    ```
 5. Pages 1~2 分钟内重建，**所有人打开就是最新版**
 
-> 后台页面不会在前台露出任何入口，且带 `noindex`。但它是纯前端页面，口令只是挡住随手点进来的人，**不是真正的安全保护**——前台 `index.html` 本身也内含全部数据，敏感数据请用私有仓库。
+> 后台入口是隐藏的（连点 Logo 5 次），页面带 `noindex`。但它是纯前端页面，口令只挡随手点进来的人，**不是真正的安全保护**——`index.html` 本身也内含全部数据，敏感数据请用私有仓库。
+>
+> 旧的 `/admin.html` 已变成一个自动跳转页，会自动跳回 `index.html`。
 
 ## 上传到 GitHub & 用 GitHub Pages 打开
 
@@ -134,13 +142,16 @@ python tools/build_static.py
 
 ### 两种运行方式的区别
 
-| | 静态版 `index.html` | 离线后台 `admin.html` | Node 版 `server.js` |
-|---|---|---|---|
-| 托管 | GitHub Pages / 双击打开 | GitHub Pages / 双击打开 | 需要 Node 服务器 |
-| 查询 | ✅ 完整可用（浏览器里查） | — | ✅ |
-| 增删改数据 | ❌ | ✅（改完导出文件） | ✅ 实时生效 |
-| 生效方式 | — | 导出后 push，1~2 分钟 | 立即 |
-| 访客留言 | 存访客本机（你看不到） | ❌ | ✅ 后台可见 |
+| | 单页版 `index.html` | Node 版 `server.js` |
+|---|---|---|
+| 托管 | GitHub Pages / 双击打开 | 需要 Node 服务器 |
+| 查询 | ✅ 完整可用（浏览器本地检索） | ✅ |
+| 后台入口 | 连点 Logo 5 次 + 口令 | `/admin` |
+| 增删改数据 | ✅（本机即时生效） | ✅ |
+| 对所有人生效 | 导出后 push，1~2 分钟 | 立即 |
+| 访客留言 | 存访客本机（你看不到） | ✅ 后台可见 |
+
+> GitHub Pages 只能托管静态文件，无法运行服务端程序，所以「改完所有人立刻看到」和「收集访客留言」这两件事在 Pages 上做不到，必须有一台能跑 Node 的服务器。
 
 > **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
 

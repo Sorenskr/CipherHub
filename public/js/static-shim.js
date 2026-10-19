@@ -9,6 +9,16 @@
   'use strict';
 
   var DATA = window.__DATA__ || {};
+
+  // 若本机有后台草稿（未导出），优先展示草稿，让本机看到自己的改动
+  try {
+    var _d = localStorage.getItem('ch_admin_draft');
+    if (_d) {
+      var _dd = JSON.parse(_d);
+      if (_dd && _dd.db) DATA = _dd.db;
+    }
+  } catch (e) {}
+
   var PLATFORMS = DATA.platforms || [];
   var PEOPLE = DATA.people || [];
   var ENTRIES = DATA.entries || [];
@@ -18,6 +28,19 @@
   var PM = {}, PEM = {};
   PLATFORMS.forEach(function (p) { PM[p.id] = p; });
   PEOPLE.forEach(function (p) { PEM[p.id] = p; });
+
+  /** 后台改动后同步给前台，使本页立即生效 */
+  window.__CH_SET_DATA__ = function (d) {
+    DATA = d || {};
+    PLATFORMS = DATA.platforms || [];
+    PEOPLE = DATA.people || [];
+    ENTRIES = DATA.entries || [];
+    GROUPS = DATA.groups || [];
+    SETTINGS = DATA.settings || {};
+    PM = {}; PEM = {};
+    PLATFORMS.forEach(function (p) { PM[p.id] = p; });
+    PEOPLE.forEach(function (p) { PEM[p.id] = p; });
+  };
 
   function fixAsset(u) {
     return String(u || '').replace(/^\/?assets\//, 'assets/');

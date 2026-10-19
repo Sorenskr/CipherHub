@@ -804,6 +804,14 @@
     });
     refreshSamples();
 
+    // 供内置后台在改完数据后刷新前台
+    window.__CH_REFRESH__ = function () {
+      try { renderFilters(); renderStats(); renderMatrix(); } catch (e) {}
+      refreshSamples();
+      switchView();
+      doSearch();
+    };
+
     var m = location.hash.match(/q=([^&]*)/);
     if (m) {
       state.q = decodeURIComponent(m[1]);
