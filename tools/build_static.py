@@ -78,6 +78,8 @@ def main():
             admin_pass = args[i + 1]
     if "--no-pass" in args:
         admin_pass = ""
+    if not any(a in args for a in ("--admin-pass", "--no-pass")) and os.environ.get("ADMIN_PASS"):
+        admin_pass = os.environ["ADMIN_PASS"]
 
     tpl = read(os.path.join(PUB, "index.html"))
     css = read(os.path.join(PUB, "css", "style.css"))
