@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import json, urllib.request, urllib.parse, sys
+import json, os, urllib.request, urllib.parse, sys
 
-BASE = "http://127.0.0.1:3000"
+BASE = os.environ.get("CH_BASE", "http://127.0.0.1:3000")
 
 
 def get(path):

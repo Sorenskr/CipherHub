@@ -1,0 +1,17 @@
+.git
+.gitignore
+node_modules
+Dockerfile
+.dockerignore
+deploy
+tools
+data/backups
+*.log
+server.out.log
+server.err.log
+README.md
+
+# 以下两项是 GitHub Pages 单页版产物，Vercel 版由 public/ 提供
+index.html
+admin.html
+assets

@@ -155,6 +155,20 @@ python tools/build_static.py
 
 > **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
 
+## 部署到 Vercel（真·动态版）
+
+Vercel 的 Serverless Functions 能跑 Node，本项目已改造为可直接部署（`api/app.js` + `vercel.json`，`server.js` 导出了 `handler`）：
+
+👉 见 **[deploy/vercel.md](deploy/vercel.md)**（导入项目、配 Vercel Blob 持久化、绑域名、排错）
+
+```bash
+# 本地模拟 Vercel 的 (req, res) 环境
+node tools/test_vercel_handler.js 8099
+CH_BASE=http://127.0.0.1:8099 python tools/smoke.py
+```
+
+> ⚠️ Vercel 国内访问不稳定；主要用户在国内建议用 CloudBase 云托管。
+
 ## 部署到腾讯云开发 CloudBase（真·动态版）
 
 GitHub Pages 只能放静态文件。想要**改完立即对所有人生效 + 收到访客留言**，需要一台能跑 Node 的服务器。

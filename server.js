@@ -1,7 +1,8 @@
 'use strict';
 /**
  * 暗号查询中心 —— 零依赖 Node HTTP 服务
- * 启动: node server.js    (默认端口 3000，可用 PORT 环境变量覆盖)
+ * 本地运行: node server.js    (默认端口 3000，可用 PORT 环境变量覆盖)
+ * Vercel  : api/app.js 直接引用本模块导出的 handler
  */
 const http = require('http');
 const fs = require('fs');
@@ -450,7 +451,7 @@ const routes = {
 
 /* ---------------- 服务器 ---------------- */
 
-const server = http.createServer((req, res) => {
+const requestListener = (req, res) => {
   let parsed;
   try {
     parsed = new URL(req.url, 'http://localhost');
@@ -480,18 +481,30 @@ const server = http.createServer((req, res) => {
       console.error('[api error]', key, e);
       if (!res.headersSent) sendError(res, 500, e.message || '服务器错误');
     });
-});
+};
 
-server.listen(PORT, HOST, () => {
-  console.log('');
-  console.log('  ✅  暗号查询中心已启动');
-  console.log(`  前台： http://localhost:${PORT}/`);
-  console.log(`  后台： http://localhost:${PORT}/admin`);
-  console.log(`  数据： ${path.join(__dirname, 'data', 'db.json')}`);
-  console.log('');
+const server = http.createServer(requestListener);
+
+function start() {
+  server.listen(PORT, HOST, () => {
+    console.log('');
+    console.log('  ✅  暗号查询中心已启动');
+    console.log(`  前台： http://localhost:${PORT}/`);
+    console.log(`  后台： http://localhost:${PORT}/admin`);
+    console.log(`  数据： ${store.FILE}`);
+    if (process.env.BLOB_READ_WRITE_TOKEN) console.log('  持久化：Vercel Blob');
+    console.log('');
+  });
+}
+
+// 本地运行时才监听端口；Vercel 场景下由 api/app.js 调用 handler
+store.init().then(() => {
+  if (require.main === module) start();
 });
 
 process.on('SIGINT', () => {
   store.saveNow();
   process.exit(0);
 });
+
+module.exports = { handler: requestListener, server, store };

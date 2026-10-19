@@ -10,7 +10,10 @@
     "import": "python tools/import_excel.py"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "optionalDependencies": {
+    "@vercel/blob": "^0.23.0"
+  }
 }
