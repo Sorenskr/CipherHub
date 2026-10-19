@@ -2,7 +2,12 @@
   "functions": {
     "api/app.js": {
       "maxDuration": 30,
-      "includeFiles": ["public/**", "data/**"]
+      "includeFiles": [
+        "server.js",
+        "lib/**",
+        "public/**",
+        "data/**"
+      ]
     }
   },
   "rewrites": [
