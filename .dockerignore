@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+*.log
+server.out.log
+server.err.log
+data/backups
+tools/__pycache__
+index.html
+admin.html
+assets
+README.md

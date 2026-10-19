@@ -155,6 +155,20 @@ python tools/build_static.py
 
 > **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
 
+## 部署到腾讯云开发 CloudBase（真·动态版）
+
+GitHub Pages 只能放静态文件。想要**改完立即对所有人生效 + 收到访客留言**，需要一台能跑 Node 的服务器。
+
+如果你已经在用 CloudBase（`*.webapps.tcloudbase.com` 那种环境），直接在同一环境开 **云托管** 即可，已备好 `Dockerfile`：
+
+👉 见 **[deploy/cloudbase.md](deploy/cloudbase.md)**（上传代码、端口、数据持久化、绑域名全流程）
+
+```bash
+# 本地镜像验证（需装 Docker）
+docker build -t cipherhub .
+docker run -p 8080:80 cipherhub
+```
+
 ## 部署到国内服务器
 
 1. 安装 Node 14+，上传整个目录
