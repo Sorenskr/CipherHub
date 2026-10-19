@@ -1,6 +1,23 @@
+# 依赖
 node_modules/
+
+# 日志
 *.log
 server.out.log
 server.err.log
+
+# 运行时数据备份
 data/backups/
+
+# 本地生成的 GitHub Pages 静态版（由 tools/build_static.py 生成，不入库）
+/index.html
+/admin.html
+/assets/
+
+# 系统垃圾
 .DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
