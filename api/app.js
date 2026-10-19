@@ -8,7 +8,21 @@ const store = require('../lib/store');
 
 let ready = null;
 
+// 兼容不同平台可能把 URL 改写成函数自身路径的情况
+function normalizeUrl(url) {
+  if (!url) return '/';
+  const i = url.indexOf('?');
+  const path = i < 0 ? url : url.slice(0, i);
+  const qs = i < 0 ? '' : url.slice(i);
+  if (path === '/api/app' || path === '/api/app/') return '/' + qs;
+  return url;
+}
+
 module.exports = function (req, res) {
+  try {
+    req.url = normalizeUrl(req.url);
+  } catch (e) { /* ignore */ }
+
   if (!ready) ready = store.init();
   ready.then(() => handler(req, res)).catch((e) => {
     if (!res.headersSent) {
