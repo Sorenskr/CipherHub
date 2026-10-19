@@ -2,7 +2,23 @@
 
 > **CipherHub** = 项目英文名（仓库名可直接用 `cipherhub`）
 
-多平台「姓名 ⇄ 暗号」双向查询系统，含后台管理、访客问题反馈、Logo 切换。**零第三方依赖**，手机 / 电脑自适应，国内可直接部署访问。
+多平台「姓名 ⇄ 暗号」双向查询系统，含后台管理、访客问题反馈、Logo 切换。**零第三方依赖**，手机 / 电脑自适应。
+
+## 这个仓库是「源代码」
+
+```
+GitHub（源代码，main 分支）
+   ├─→ Vercel        真动态版（后台改完立即生效）      ← 推荐给国内用户改用 CloudBase
+   ├─→ CloudBase 云托管  真动态版、国内速度快
+   └─→ GitHub Pages  GitHub Actions 自动构建静态版
+```
+
+**约定：**
+
+- `main` 分支**只保存源代码**，不含任何构建产物
+- 本地生成的静态页（`index.html` / `admin.html` / `assets/`）已被 `.gitignore` 排除，不入库
+- 需要时本地执行 `python tools/build_static.py` 生成
+- GitHub Pages 由 `.github/workflows/pages.yml` 在 CI 上构建并发布，main 保持干净
 
 ## 快速开始
 
@@ -115,20 +131,18 @@ python tools/build_static.py --no-pass        # 不要口令，点 5 次直接�
 
 ## 上传到 GitHub & 用 GitHub Pages 打开
 
-仓库根目录已经有一份**静态版 `index.html`**（自动生成，CSS / JS / 数据全部内嵌，可直接双击打开，也能被 GitHub Pages 直接托管）。
+仓库已就绪（源码已在 `main`），日常同步：
 
 ```bash
-cd E:\code\anhao
-git add -A
-git commit -m "feat: CipherHub 暗号查询中心"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/cipherhub.git
-git push -u origin main
+git add -A && git commit -m "..." && git push
 ```
 
-然后在 GitHub 仓库页面：**Settings → Pages → Build and deployment → Source 选 `Deploy from a branch` → Branch 选 `main` / 目录选 `/(root)` → Save**。
+GitHub Pages 由 **Actions 自动构建**（生成物不入 `main` 分支）：
 
-等 1~2 分钟即可访问：`https://<你的用户名>.github.io/cipherhub/`
+1. 仓库 **Settings → Pages → Build and deployment → Source 选 `GitHub Actions`**
+2. push 后 Actions 自动执行 `python tools/build_static.py` 并发布
+
+访问：`https://<你的用户名>.github.io/CipherHub/`
 
 ### 数据更新后重新生成静态版
 
@@ -138,22 +152,22 @@ git push -u origin main
 python tools/build_static.py
 ```
 
-会重新生成根目录 `index.html`（管理员账号密码不会写入该文件）。
+会在**本地**重新生成根目录 `index.html` / `admin.html` / `assets/`（这些文件已被 `.gitignore` 排除，不会进仓库）。想让 Pages 也更新，只需把改好的 `data/db.json` 提交推送，Actions 会重新构建。
 
 ### 两种运行方式的区别
 
-| | 单页版 `index.html` | Node 版 `server.js` |
+| | 单页静态版 | Node 版（Vercel / CloudBase / 本地） |
 |---|---|---|
-| 托管 | GitHub Pages / 双击打开 | 需要 Node 服务器 |
+| 托管 | GitHub Pages（Actions 构建）/ 双击打开 | 需要 Node 运行时 |
 | 查询 | ✅ 完整可用（浏览器本地检索） | ✅ |
 | 后台入口 | 连点 Logo 5 次 + 口令 | `/admin` |
 | 增删改数据 | ✅（本机即时生效） | ✅ |
-| 对所有人生效 | 导出后 push，1~2 分钟 | 立即 |
+| 对所有人生效 | 改 `data/db.json` + push，1~2 分钟 | 立即 |
 | 访客留言 | 存访客本机（你看不到） | ✅ 后台可见 |
 
-> GitHub Pages 只能托管静态文件，无法运行服务端程序，所以「改完所有人立刻看到」和「收集访客留言」这两件事在 Pages 上做不到，必须有一台能跑 Node 的服务器。
+> GitHub Pages 只能托管静态文件，无法运行服务端程序，所以「改完所有人立刻看到」和「收集访客留言」这两件事在 Pages 上做不到，必须有一台能跑 Node 的平台（Vercel / CloudBase 云托管）。
 
-> **隐私提醒**：根目录 `index.html` 和 `data/db.json` 里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。建议设为 **Private**，或把 `index.html`、`assets/`、`data/` 加进 `.gitignore` 只提交源码，需要时在本地 `python tools/build_static.py` 生成后再手动上传。
+> **隐私提醒**：`data/db.json` 与生成的静态页里包含全部真实姓名与暗号。如果仓库是 **public**，这些数据等于公开。敏感数据建议设为 **Private**。
 
 ## 部署到 Vercel（真·动态版）
 
