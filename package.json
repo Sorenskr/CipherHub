@@ -8,8 +8,5 @@
     "start": "node main.js",
     "dev": "node main.js"
   },
-  "engines": {
-    "node": "20.x"
-  },
   "dependencies": {}
 }
