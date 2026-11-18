@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="theme-color" content="#0b0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="description" content="CipherHub · 暗号、短链与团队归属一站式实时查询中心">
+<title>暗号查询中心</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c5cff'/%3E%3Cstop offset='100%25' stop-color='%233ea6ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M24 16L18 48M46 16L40 48M14 26h36M12 38h36' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=20261118">
+</head>
+<body>
+
+<!-- 不间断背景动效 -->
+<div class="bg" aria-hidden="true">
+  <div class="aurora"><i></i><i></i><i></i><i></i></div>
+  <div class="grid"></div>
+  <div class="dots" id="bgDots"></div>
+</div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <span class="logo" id="logoBox"><img id="brandLogo" src="" alt="logo"></span>
+      <span id="siteName">暗号查询中心</span>
+    </a>
+    <button class="icon-btn" id="logoBtn" title="切换 Logo" aria-label="切换 Logo">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 2l4 4-14 14-4-4z"/><path d="M15 4l4 4"/><path d="M2 14h8v8"/>
+      </svg>
+    </button>
+    <nav>
+      <a href="#discover" id="navDiscover">速览</a>
+      <a href="#sheetViewSec" id="navSheetView">三表全量明细</a>
+      <a href="#feedback">反馈</a>
+      <button class="icon-btn" id="themeBtn" title="切换明暗主题" aria-label="切换主题">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <!-- 在线表格实时联动状态条（前台保持简洁隐藏） -->
+    <div class="sync-bar" id="syncBar" style="display:none">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncText">正在同步最新数据…</span>
+      <button type="button" class="btn sm ghost" id="syncPullBtn" style="padding:3px 10px;font-size:12px">🔄 立即刷新</button>
+    </div>
+
+    <h1>输入 <em>姓名</em>、<em>暗号</em> 或 <em>短链</em>，秒查专属归属</h1>
+    <p id="subtitle">支持按姓名正查名下全部暗号与专属短链，或按团队、关键词反查归属人</p>
+
+    <div class="searchbox" id="searchbox">
+      <div class="field">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+        </svg>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="输入姓名、暗号关键词、短链或团队名…">
+        <button class="clear" id="clearBtn" title="清空" aria-label="清空">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="suggest" id="suggest"></div>
+    </div>
+
+    <div class="filters">
+      <div class="chip-row team-row" id="teamFilter"></div>
+      <div class="chip-row" id="platFilter"></div>
+      <div style="margin-top:4px">
+        <div class="view-switch" id="viewSwitch" role="tablist" aria-label="展示模式切换">
+          <button type="button" class="on" data-view="discover">✨ 速览与归属卡片</button>
+          <button type="button" data-view="sheet">📋 三表全量明细</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <!-- 模式一：分类速览 -->
+  <section id="discover" class="discover">
+    <div class="sec-head">
+      <h2>分类速览</h2>
+      <span class="n" id="discoverNote">点击任意分类或上方团队查看明细</span>
+      <span class="spacer"></span>
+      <button class="btn sm ghost" id="shuffleAll">换一批样本</button>
+    </div>
+
+    <div class="matrix" id="matrix"></div>
+
+    <div class="marquee"><div class="track" id="mqTrack"></div></div>
+
+    <div class="spot">
+      <div class="spot-in">
+        <div class="spot-label">随机聚焦 · 内容已脱敏</div>
+        <div class="spot-body" id="spotBody"></div>
+        <div class="spot-foot">
+          <span class="spot-dots" id="spotDots"></span>
+          <span class="spacer"></span>
+          <button class="btn sm ghost" id="spotMore">换一个</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="previewBox" class="preview" style="display:none">
+      <div class="sec-head">
+        <h2 id="pvTitle">随机样本</h2>
+        <span class="n" id="pvNote"></span>
+      </div>
+      <div class="pv-grid" id="pvGrid"></div>
+    </div>
+
+    <div class="tip-bar">
+      以上为<b>随机抽样并脱敏</b>的展示，实时数据以在线《暗号表》的<b>「团队」在册成员</b>为准。<br>
+      点击上方任意<b>团队分组</b>可直接浏览全组人员名下暗号与短链，或直接输入<b>姓名 / 暗号 / 短链</b>秒查。
+    </div>
+  </section>
+
+  <!-- 模式二：三表全量明细视图 -->
+  <section id="sheetViewSec" class="sheet-view-sec" style="display:none">
+    <div class="sec-head" style="margin-top:8px">
+      <h2>在线表格全量明细</h2>
+      <span class="n" id="sheetViewCount"></span>
+      <span class="spacer"></span>
+      <div class="view-switch sm" id="sheetTabSwitch" role="tablist" aria-label="子表切换">
+        <button type="button" class="on" data-sheet-tab="main">📋 总表暗号</button>
+        <button type="button" data-sheet-tab="links">🔗 专属短链</button>
+        <button type="button" data-sheet-tab="teams">👥 团队分组</button>
+      </div>
+      <button type="button" class="btn sm primary" id="copySheetAllBtn">📋 一键复制当前明细</button>
+    </div>
+
+    <div class="table-card" id="sheetTableCard">
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead id="sheetViewHead"></thead>
+          <tbody id="sheetViewBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="sheetTeamsGrid" class="teams-overview-grid" style="display:none"></div>
+  </section>
+
+  <!-- 搜索 / 团队筛选结果区 -->
+  <section id="results" style="display:none"></section>
+
+  <!-- 问题反馈 / 联系方式 -->
+  <section id="feedback" class="fb-sec">
+    <div class="sec-head">
+      <h2 id="fbTitle">问题反馈</h2>
+      <span class="n" id="fbSub"></span>
+    </div>
+    <div class="card fb-card">
+      <div class="fb-left">
+        <p class="fb-desc" id="fbDesc"></p>
+        <div class="contacts" id="fbContacts"></div>
+        <div class="tiny muted" id="fbEmpty" style="display:none">管理员暂未填写联系方式，可直接用右侧表单留言。</div>
+      </div>
+      <form class="fb-form" id="fbForm">
+        <div class="form-grid">
+          <input class="input" id="fbName" maxlength="40" placeholder="你的称呼（选填）">
+          <input class="input" id="fbContact" maxlength="80" placeholder="联系方式：微信 / QQ / 邮箱（选填）">
+        </div>
+        <textarea class="textarea" id="fbMsg" maxlength="1000" required placeholder="描述遇到的问题，例如：查不到某某的暗号关键词或短链 / 需要新增某条记录…"></textarea>
+        <div class="fb-foot">
+          <span class="tiny muted">提交后自动同步至后台反馈表</span>
+          <span class="spacer"></span>
+          <button class="btn primary" type="submit" id="fbSubmit">提交反馈</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div><b>CipherHub</b> · 暗号、短链与团队归属实时查询中心</div>
+  <div class="tiny" style="margin-top:6px" id="updatedAt"></div>
+</footer>
+
+<button class="fb-fab" id="fbFab" title="问题反馈" aria-label="问题反馈">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </svg>
+</button>
+
+<!-- ================= 内置管理后台（连点左上角 Logo 5 次进入） ================= -->
+<div id="admGate" class="login-page" style="display:none">
+  <form class="card login-card" id="admGateForm">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="logo" style="width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#ff5c8a);color:#fff;font-weight:800">#</span>
+      <b style="font-size:17px">CipherHub · 管理后台</b>
+    </div>
+    <div class="tiny muted" style="margin-bottom:6px">输入后台口令进入（默认口令：<code>admin123</code>）</div>
+    <div class="row">
+      <input type="text" autocomplete="username" value="admin" hidden aria-hidden="true">
+      <label class="tiny muted" for="admGatePass">管理口令</label>
+      <input class="input" id="admGatePass" type="password" autocomplete="current-password" placeholder="请输入口令（默认 admin123）">
+    </div>
+    <div class="err-text" id="admGateErr"></div>
+    <button class="btn primary" type="submit">进入后台</button>
+    <div class="tiny muted" style="margin-top:14px;text-align:center">
+      <a href="#" id="admGateCancel">返回前台</a>
+    </div>
+  </form>
+</div>
+
+<div id="admRoot" style="display:none">
+  <header class="admin-head">
+    <div class="wrap">
+      <a class="brand" href="#" id="admHome">
+        <span class="logo" style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#3ea6ff);color:#fff;font-weight:800">#</span>
+        <span>后台管理</span>
+      </a>
+      <div class="tabs" id="admTabs">
+        <button type="button" data-tab="bind" class="on">📊 在线表格绑定</button>
+        <button type="button" data-tab="rows">📋 总表暗号 (A/B/C列)</button>
+        <button type="button" data-tab="links">🔗 短链管理</button>
+        <button type="button" data-tab="people">👥 团队与成员</button>
+        <button type="button" data-tab="bulk">📥 批量粘贴导入</button>
+        <button type="button" data-tab="settings">⚙️ 站点设置与导出</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn sm ghost" id="admExit">返回前台</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 面板 1：在线表格绑定与概览 -->
+    <section class="panel on" id="adm-panel-bind">
+      <div class="kv" id="admDashStats"></div>
+
+      <div class="card" style="padding:22px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <h3 style="margin:0">🔗 绑定在线表格（总表 + 短链 + 团队三表联动）</h3>
+          <div id="admBindStatusBox"></div>
+        </div>
+
+        <div class="order-rule-banner" style="margin-bottom:16px">
+          <div>
+            <b>三表同步与联动清理规范：</b><br>
+            以 Google 表格中的 <b>「团队」</b> 在册组员名单为准；表格里删除某成员或某条暗号后，<code>总表</code>、<code>短链</code> 与网站数据同步清除，不留旧数据。<br>
+            总表按固定顺序排列：<b>番号 → 聊天 → 走光 → 任务 → 新模版 → 备用 → 备用2 → 创新</b>。
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="admCfgGasUrl">方式一（推荐·双向读写）：Google Apps Script 部署链接 (Web App URL)</label>
+            <input class="input" id="admCfgGasUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+            <div class="tiny muted" style="margin-top:4px">对应项目中的 <code>apps-script/Code.gs</code> 部署地址</div>
+          </div>
+          <div class="form-row">
+            <label for="admCfgSheetUrl">方式二（直连读取 / 指定表格）：Google 在线表格链接或 ID</label>
+            <input class="input" id="admCfgSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/1xxxx.../edit">
+            <div class="tiny muted" style="margin-top:4px">自动读取同一文档下的「总表」「短链」「团队」三个工作表</div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:4px">
+          <div class="form-row">
+            <label for="admCfgSheetName">主表工作表名称（默认「总表」）</label>
+            <input class="input" id="admCfgSheetName" placeholder="总表">
+          </div>
+          <div class="form-row">
+            <label for="admCfgToken">后台管理口令 / 写入密钥 (ADMIN_TOKEN)</label>
+            <input class="input" id="admCfgToken" value="admin123" placeholder="默认 admin123">
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:4px;align-items:center">
+          <div class="form-row" style="margin-bottom:0">
+            <label for="admCfgInterval">前台自动轮询同步间隔</label>
+            <select class="select" id="admCfgInterval">
+              <option value="0">仅打开页面 / 切回标签页时同步</option>
+              <option value="15">每 15 秒自动同步</option>
+              <option value="25" selected>每 25 秒自动同步（推荐）</option>
+              <option value="60">每 60 秒自动同步</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin-bottom:0;padding-top:20px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text)">
+              <input type="checkbox" id="admCfgAutoPush" checked style="width:16px;height:16px">
+              在后台增删改数据时，自动推送写回在线表格
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+          <button type="button" class="btn primary" id="admBindSavePull">🔗 保存并立即从在线表格同步</button>
+          <button type="button" class="btn ok" id="admBindCleanByTeam">🧹 按「团队」表名单清理云端总表与短链</button>
+          <button type="button" class="btn" id="admBindPushCloud">☁️ 推送当前网页数据到在线表格</button>
+          <button type="button" class="btn ghost" id="admBindSortCloud">📑 在线总表按分类重排</button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <b>各分类暗号统计（番号 → 聊天 → 走光 → 任务 → 新模版 → 备用 → 备用2 → 创新）</b>
+        </div>
+        <div class="tbl-scroll"><table class="tbl"><tbody id="admDashPlat"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 面板 2：总表暗号（A1 姓名 | B1 关键词 | C1 平台/模板） -->
+    <section class="panel" id="adm-panel-rows">
+      <div class="toolbar">
+        <input class="input grow" id="admRQ" placeholder="搜索姓名 / 关键词 / 模板 / 团队…">
+        <select class="select" id="admRTpl"></select>
+        <div class="spacer"></div>
+        <button type="button" class="btn ghost" id="admRSort">🧹 按固定分类重排</button>
+        <button type="button" class="btn primary" id="admRAdd">+ 新增暗号</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:90px">表格行号</th>
+                <th><span class="col-head-pill">A1</span>姓名</th>
+                <th style="width:110px">所属团队</th>
+                <th><span class="col-head-pill">B1</span>关键词</th>
+                <th><span class="col-head-pill">C1</span>平台/模板</th>
+                <th style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="admRBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="admRCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 面板 3：短链管理 -->
+    <section class="panel" id="adm-panel-links">
+      <div class="toolbar">
+        <input class="input grow" id="admLQ" placeholder="搜索姓名 / 短链标识 / Adjust 地址…">
+        <div class="spacer"></div>
+        <button type="button" class="btn primary" id="admLAdd">+ 新增短链</button>
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:90px">表格行号</th>
+                <th><span class="col-head-pill">A1</span>姓名</th>
+                <th style="width:110px">所属团队</th>
+                <th><span class="col-head-pill">B1</span>短链</th>
+                <th><span class="col-head-pill">C1</span>地址</th>
+                <th style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="admLBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="admLCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 面板 4：团队与成员汇总 -->
+    <section class="panel" id="adm-panel-people">
+      <div class="toolbar">
+        <input class="input grow" id="admPQ" placeholder="搜索成员姓名或所属团队…">
+      </div>
+      <div class="table-card">
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:120px">姓名</th>
+                <th style="width:110px">所属团队</th>
+                <th style="width:100px">暗号 / 短链</th>
+                <th>名下各分类暗号与短链明细</th>
+                <th style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="admPBody"></tbody>
+          </table>
+        </div>
+        <div class="table-foot"><span id="admPCount"></span></div>
+      </div>
+    </section>
+
+    <!-- 面板 5：批量粘贴导入 -->
+    <section class="panel" id="adm-panel-bulk">
+      <div class="card" style="padding:22px">
+        <h3 style="margin:0 0 6px">📥 批量粘贴导入（支持从 Excel / 在线表格直接框选复制）</h3>
+        <p class="tiny muted" style="margin-top:0">
+          每行一条，支持三列（<code>姓名  关键词  平台/模板</code>）或两列（<code>姓名  关键词</code>，自动使用下方所选默认分类）。<br>
+          导入后会自动按固定分类顺序排列，并在存在团队白名单时仅保留在册成员。
+        </p>
+        <div class="form-grid" style="margin:14px 0">
+          <div>
+            <label class="tiny muted" for="admBTpl">当未填写第 3 列时的默认分类</label>
+            <select class="select" id="admBTpl"></select>
+          </div>
+          <div>
+            <label class="tiny muted" for="admBMode">导入方式</label>
+            <select class="select" id="admBMode">
+              <option value="append">追加到现有表格并按分类重排</option>
+              <option value="replace">全量替换现有总表数据</option>
+            </select>
+          </div>
+        </div>
+        <textarea class="textarea" id="admBText" rows="8" placeholder="周政霖&#9;3250&#9;番号&#10;慕杰&#9;1234&#9;聊天&#10;宋磊&#9;5678&#9;任务"></textarea>
+        <div style="margin-top:14px">
+          <button type="button" class="btn primary" id="admBSubmit">⚡ 执行导入并自动按分类排序</button>
+        </div>
+        <div id="admBResult" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <!-- 面板 6：站点设置与导出 -->
+    <section class="panel" id="adm-panel-settings">
+      <div class="card" style="padding:22px;margin-bottom:16px">
+        <h3 style="margin:0 0 6px">📤 导出表格与固化配置</h3>
+        <p class="tiny muted" style="margin-top:0">
+          可将整理好的数据导出为标准三列 CSV，或导出包含最新三表数据的 <code>data.js</code>。
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button type="button" class="btn primary" id="admExpCsv">📊 导出总表 CSV (A姓名/B关键词/C模板)</button>
+          <button type="button" class="btn" id="admExpDataJs">💾 导出 js/data.js (固化三表快照与配置)</button>
+          <button type="button" class="btn danger ghost" id="admResetDefault">↺ 恢复内置默认快照</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:22px;margin-bottom:16px">
+        <h3 style="margin:0 0 14px">🌐 站点基本信息</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted" for="admSName">站点名称</label><input class="input" id="admSName"></div>
+          <div><label class="tiny muted" for="admSSub">副标题</label><input class="input" id="admSSub"></div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="tiny muted" for="admSLogos">Logo 路径或 Data URI（多个用英文逗号分隔）</label>
+          <input class="input" id="admSLogos">
+        </div>
+        <div style="margin-top:14px"><button type="button" class="btn primary" id="admSSave">保存站点信息</button></div>
+      </div>
+
+      <div class="card" style="padding:22px">
+        <h3 style="margin:0 0 14px">💬 问题反馈区配置</h3>
+        <div class="form-grid">
+          <div><label class="tiny muted" for="admFbTitle">标题</label><input class="input" id="admFbTitle"></div>
+          <div><label class="tiny muted" for="admFbDesc">说明文字</label><input class="input" id="admFbDesc"></div>
+        </div>
+        <label class="tiny muted" style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+          <input type="checkbox" id="admFbEnable" style="width:16px;height:16px"> 开启访客留言表单
+        </label>
+        <div style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <b class="tiny">联系方式列表</b><div class="spacer"></div>
+            <button type="button" class="btn sm" id="admCtAdd">+ 添加联系方式</button>
+          </div>
+          <div id="admCtList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div style="margin-top:14px"><button type="button" class="btn primary" id="admFbSave">保存反馈配置</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-mask" id="admMask">
+  <div class="modal">
+    <header><h3 id="admMTitle">标题</h3><button type="button" class="x" id="admMClose">×</button></header>
+    <div class="body" id="admMBody"></div>
+    <footer>
+      <button type="button" class="btn ghost" id="admMCancel">取消</button>
+      <button type="button" class="btn primary" id="admMOk">确定</button>
+    </footer>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="admToast"></div>
+
+<!-- 纯静态无构建脚本，按序加载，直接用 Live Server 即可打开 -->
+<script src="js/data.js?v=20261118"></script>
+<script src="js/sheet-sync.js?v=20261118"></script>
+<script src="js/app.js?v=20261118"></script>
+<script src="js/admin.js?v=20261118"></script>
+</body>
+</html>

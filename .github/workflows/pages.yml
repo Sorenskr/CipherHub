@@ -1,7 +1,4 @@
-# GitHub Pages 自动构建：main 分支永远只保存源代码，
-# 静态页面由本工作流在 CI 上生成并发布（生成物不进 main 分支）。
-#
-# 需要在仓库 Settings → Pages → Build and deployment → Source 选 "GitHub Actions"
+# GitHub Pages 自动部署：直接发布根目录静态文件（与本地 / Vercel 保持一致）
 on:
   push:
     branches: [main]
@@ -22,21 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: 生成静态版（index.html / admin.html / assets）
-        env:
-          ADMIN_PASS: ${{ secrets.ADMIN_PASS || 'admin123' }}
-        run: python tools/build_static.py
-
-      - name: 收集发布产物
+      - name: 收集静态站发布文件
         run: |
           mkdir -p _site
           cp index.html _site/
-          cp admin.html _site/
-          cp -r assets _site/assets
+          cp -r css _site/css
+          cp -r js _site/js
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,19 +1,15 @@
 {
   "name": "cipherhub",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "CipherHub · 暗号查询中心 —— 支持 Threads / Instagram / TikTok / X / Facebook / 视频 / 短链 的姓名与暗号双向查询，含后台管理、问题反馈与多端适配",
+  "description": "CipherHub · 暗号查询中心 —— 打通总表/短链/团队三表实时同步，一站式姓名、暗号与短链双向查询",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
-    "dev": "node main.js",
-    "import": "python tools/import_excel.py"
+    "dev": "node main.js"
   },
   "engines": {
     "node": "20.x"
   },
-  "dependencies": {},
-  "optionalDependencies": {
-    "@vercel/blob": "^0.23.0"
-  }
+  "dependencies": {}
 }

@@ -1,12 +1,11 @@
 {
-  "builds": [
+  "cleanUrls": true,
+  "headers": [
     {
-      "src": "api/app.js",
-      "use": "@vercel/node",
-      "config": { "includeFiles": "**" }
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
     }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/app.js" }
   ]
 }
