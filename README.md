@@ -1,7 +1,7 @@
 # CipherHub · 暗号查询中心（正式版 · 三表实时同步）
 
 - **正式版直达网址**：https://sorenskr.github.io/CipherHub/
-- **测试版直达网址**：https://sorenskr.github.io/anhao-beta/
+- **测试版直达网址**：https://sorenskr.github.io/CipherHub-beta/
 - **实时同步数据源（Google 在线表格）**：https://docs.google.com/spreadsheets/d/11HHwGX4lCUyHmBjcdrWhmGUtZsYmwlwoxIE4Qh_aKFU/edit?gid=0#gid=0
 
 与测试版仓库共用同一个 Google 在线《暗号表》（Spreadsheet ID: `11HHwGX4lCUyHmBjcdrWhmGUtZsYmwlwoxIE4Qh_aKFU`），实现 **总表 + 短链 + 团队** 三表打通实时联动。
